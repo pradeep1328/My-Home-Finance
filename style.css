@@ -1,95 +1,159 @@
-body {
-    font-family: Arial, sans-serif;
-    background: #f4f7fa;
+* {
     margin: 0;
-    padding: 20px;
-}
-
-.container {
-    max-width: 450px;
-    margin: 40px auto;
-    background: white;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    text-align: center;
-}
-
-h1 {
-    color: #2c3e50;
-}
-
-.card {
-    margin: 20px 0;
-    text-align: left;
-}
-
-label {
-    font-weight: bold;
-    display: block;
-    margin-bottom: 8px;
-}
-
-input {
-    width: 100%;
-    padding: 12px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
+    padding: 0;
     box-sizing: border-box;
 }
 
-button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 20px;
-    background: #28a745;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 18px;
-    cursor: pointer;
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f9;
+    color: #333;
 }
 
-button:hover {
-    background: #218838;
+.container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
 }
 
-.result {
-    margin-top: 25px;
-    padding: 15px;
-    background: #eef8ee;
-    border-radius: 10px;
-}
-
-.result h1 {
-    color: #28a745;
-    margin: 10px 0;
-}
-.dashboard {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    margin: 20px 0;
-}
-
-.box {
-    flex: 1;
-    background: #f8f9fa;
-    border-radius: 10px;
-    padding: 15px;
+header {
     text-align: center;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    color: #1565c0;
+    margin-bottom: 8px;
+}
+
+header p {
+    color: #666;
+}
+
+.section-box {
+    background: #fff;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.box h3 {
-    margin: 0;
+.section-box h2 {
+    margin-bottom: 15px;
+    color: #1565c0;
+}
+
+label {
+    display: block;
+    margin-top: 12px;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #bbb;
+    border-radius: 8px;
     font-size: 16px;
 }
 
-.box p {
-    margin-top: 10px;
-    font-size: 20px;
+.dashboard {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.dashboard-card {
+    flex: 1;
+    min-width: 180px;
+    background: #1976d2;
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.dashboard-card h3 {
+    margin-bottom: 10px;
+}
+
+.dashboard-card p {
+    font-size: 24px;
     font-weight: bold;
-    color: #28a745;
+}
+
+.button-section {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    color: white;
+}
+
+.calculate-button {
+    background: #4caf50;
+}
+
+.save-button {
+    background: #2196f3;
+}
+
+.reset-button {
+    background: #f44336;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+.result-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    font-size: 18px;
+    border-bottom: 1px solid #ddd;
+}
+
+.chart-section {
+    text-align: center;
+}
+
+.chart-container {
+    max-width: 500px;
+    margin: 20px auto;
+}
+
+canvas {
+    width: 100% !important;
+    height: auto !important;
+}
+
+footer {
+    text-align: center;
+    margin-top: 30px;
+    color: #666;
+    font-size: 14px;
+}
+
+@media (max-width: 768px) {
+
+    .dashboard {
+        flex-direction: column;
+    }
+
+    .button-section {
+        flex-direction: column;
+    }
 }
