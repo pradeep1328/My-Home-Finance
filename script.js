@@ -44,7 +44,54 @@ function calculate() {
         document.getElementById("balanceCard").style.color = "red";
     }
 }
+const ctx = document.getElementById("expenseChart").getContext("2d");
 
+if (chart) {
+    chart.destroy();
+}
+
+chart = new Chart(ctx, {
+    type: "pie",
+    data: {
+        labels: [
+            "Groceries",
+            "Petrol",
+            "EMI",
+            "Insurance",
+            "School",
+            "Mobile",
+            "Other"
+        ],
+        datasets: [{
+            data: [
+                groceries,
+                petrol,
+                emi,
+                insurance,
+                school,
+                mobile,
+                other
+            ],
+            backgroundColor: [
+                "#4CAF50",
+                "#2196F3",
+                "#FF9800",
+                "#E91E63",
+                "#9C27B0",
+                "#00BCD4",
+                "#795548"
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: "bottom"
+            }
+        }
+    }
+});
 function saveData() {
 
     let month = document.getElementById("month").value;
