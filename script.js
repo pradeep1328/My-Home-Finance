@@ -41,18 +41,18 @@ document.getElementById("balanceCard").innerHTML =
 }
 
 function saveData() {
+
     let month = document.getElementById("month").value;
     
     localStorage.setItem(month + "_income", document.getElementById("income").value);
+    localStorage.setItem(month + "_groceries", document.getElementById("groceries").value);
+    localStorage.setItem(month + "_petrol", document.getElementById("petrol").value);
+    localStorage.setItem(month + "_emi", document.getElementById("emi").value);
+    localStorage.setItem(month + "_insurance", document.getElementById("insurance").value);
+    localStorage.setItem(month + "_school", document.getElementById("school").value);
+    localStorage.setItem(month + "_mobile", document.getElementById("mobile").value);
+    localStorage.setItem(month + "_other", document.getElementById("other").value);
     
-    localStorage.setItem("groceries", document.getElementById("groceries").value);
-    localStorage.setItem("petrol", document.getElementById("petrol").value);
-    localStorage.setItem("emi", document.getElementById("emi").value);
-    localStorage.setItem("insurance", document.getElementById("insurance").value);
-    localStorage.setItem("school", document.getElementById("school").value);
-    localStorage.setItem("mobile", document.getElementById("mobile").value);
-    localStorage.setItem("other", document.getElementById("other").value);
-
     alert("Data Saved Successfully!");
 }
 
