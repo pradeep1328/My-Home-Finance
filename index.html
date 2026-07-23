@@ -1,110 +1,306 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
     <title>My Home Finance</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<div class="container">
+    <div class="container">
 
-    <h1>🏠 My Home Finance</h1>
-    <div class="card">
-    <label>📅 Select Month</label>
-    <select id="month">
-        <option>January 2026</option>
-        <option>February 2026</option>
-        <option>March 2026</option>
-        <option>April 2026</option>
-        <option>May 2026</option>
-        <option>June 2026</option>
-        <option selected>July 2026</option>
-        <option>August 2026</option>
-        <option>September 2026</option>
-        <option>October 2026</option>
-        <option>November 2026</option>
-        <option>December 2026</option>
-    </select>
-</div>
-<div class="dashboard">
+        <header>
+            <h1>🏠 My Home Finance</h1>
+            <p>Monthly Income and Expense Tracker</p>
+        </header>
 
-    <div class="box">
-        <h3>💰 Income</h3>
-        <p id="incomeCard">₹0</p>
+
+        <!-- Month Selection -->
+
+        <section class="section-box">
+
+            <h2>📅 Select Month</h2>
+
+            <select id="month">
+
+                <option value="January">January</option>
+                <option value="February">February</option>
+                <option value="March">March</option>
+                <option value="April">April</option>
+                <option value="May">May</option>
+                <option value="June">June</option>
+                <option value="July">July</option>
+                <option value="August">August</option>
+                <option value="September">September</option>
+                <option value="October">October</option>
+                <option value="November">November</option>
+                <option value="December">December</option>
+
+            </select>
+
+        </section>
+
+
+        <!-- Dashboard Cards -->
+
+        <section class="dashboard">
+
+            <div class="dashboard-card">
+
+                <h3>Income</h3>
+
+                <p id="incomeCard">₹0</p>
+
+            </div>
+
+
+            <div class="dashboard-card">
+
+                <h3>Total Expense</h3>
+
+                <p id="expenseCard">₹0</p>
+
+            </div>
+
+
+            <div class="dashboard-card">
+
+                <h3>Balance</h3>
+
+                <p id="balanceCard">₹0</p>
+
+            </div>
+
+        </section>
+
+
+        <!-- Income Section -->
+
+        <section class="section-box">
+
+            <h2>💰 Monthly Income</h2>
+
+            <label for="income">
+                Salary / Total Income
+            </label>
+
+            <input
+                type="number"
+                id="income"
+                placeholder="Enter monthly income"
+                min="0"
+            >
+
+        </section>
+
+
+        <!-- Expense Section -->
+
+        <section class="section-box">
+
+            <h2>💸 Monthly Expenses</h2>
+
+
+            <label for="groceries">
+                Groceries
+            </label>
+
+            <input
+                type="number"
+                id="groceries"
+                placeholder="Enter groceries amount"
+                min="0"
+            >
+
+
+            <label for="petrol">
+                Petrol
+            </label>
+
+            <input
+                type="number"
+                id="petrol"
+                placeholder="Enter petrol amount"
+                min="0"
+            >
+
+
+            <label for="emi">
+                EMI
+            </label>
+
+            <input
+                type="number"
+                id="emi"
+                placeholder="Enter EMI amount"
+                min="0"
+            >
+
+
+            <label for="insurance">
+                Insurance
+            </label>
+
+            <input
+                type="number"
+                id="insurance"
+                placeholder="Enter insurance amount"
+                min="0"
+            >
+
+
+            <label for="school">
+                School Fees
+            </label>
+
+            <input
+                type="number"
+                id="school"
+                placeholder="Enter school fees"
+                min="0"
+            >
+
+
+            <label for="mobile">
+                Mobile and Internet
+            </label>
+
+            <input
+                type="number"
+                id="mobile"
+                placeholder="Enter mobile and internet amount"
+                min="0"
+            >
+
+
+            <label for="other">
+                Other Expenses
+            </label>
+
+            <input
+                type="number"
+                id="other"
+                placeholder="Enter other expenses"
+                min="0"
+            >
+
+        </section>
+
+
+        <!-- Buttons -->
+
+        <section class="button-section">
+
+            <button
+                type="button"
+                onclick="calculate()"
+                class="calculate-button"
+            >
+                Calculate
+            </button>
+
+
+            <button
+                type="button"
+                onclick="saveData()"
+                class="save-button"
+            >
+                Save Data
+            </button>
+
+
+            <button
+                type="button"
+                onclick="resetData()"
+                class="reset-button"
+            >
+                Reset
+            </button>
+
+        </section>
+
+
+        <!-- Result Section -->
+
+        <section class="section-box result-section">
+
+            <h2>📊 Monthly Summary</h2>
+
+            <div class="result-row">
+
+                <span>Total Expense</span>
+
+                <strong>
+                    ₹<span id="totalExpense">0</span>
+                </strong>
+
+            </div>
+
+
+            <div class="result-row">
+
+                <span>Remaining Balance</span>
+
+                <strong>
+                    ₹<span id="balance">0</span>
+                </strong>
+
+            </div>
+
+        </section>
+
+
+        <!-- Expense Pie Chart -->
+
+        <section class="section-box chart-section">
+
+            <h2>📊 Expense Chart</h2>
+
+            <p>
+                Percentage of each expense category
+            </p>
+
+            <div class="chart-container">
+
+                <canvas id="expenseChart"></canvas>
+
+            </div>
+
+        </section>
+
+
+        <footer>
+
+            <p>My Home Finance App</p>
+
+        </footer>
+
     </div>
 
-    <div class="box">
-        <h3>💸 Expenses</h3>
-        <p id="expenseCard">₹0</p>
-    </div>
 
-    <div class="box">
-        <h3>💵 Balance</h3>
-        <p id="balanceCard">₹0</p>
-    </div>
+    <!-- Chart.js Library -->
 
-</div>
-    <div class="card">
-        <label>💰 Monthly Income (₹)</label>
-        <input type="number" id="income" placeholder="Enter Monthly Income">
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <div class="card">
-        <label>🛒 Groceries (₹)</label>
-        <input type="number" id="groceries" placeholder="Enter Groceries Expense">
-    </div>
 
-    <div class="card">
-        <label>⛽ Petrol (₹)</label>
-        <input type="number" id="petrol" placeholder="Enter Petrol Expense">
-    </div>
+    <!-- Percentage Plugin -->
 
-    <div class="card">
-        <label>🏦 EMI (₹)</label>
-        <input type="number" id="emi" placeholder="Enter EMI">
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
-    <div class="card">
-        <label>🛡️ Insurance (₹)</label>
-        <input type="number" id="insurance" placeholder="Enter Insurance">
-    </div>
 
-    <div class="card">
-        <label>🎓 School Fee (₹)</label>
-        <input type="number" id="school" placeholder="Enter School Fee">
-    </div>
+    <!-- App JavaScript -->
 
-    <div class="card">
-        <label>📱 Mobile / Internet (₹)</label>
-        <input type="number" id="mobile" placeholder="Enter Mobile & Internet">
-    </div>
-
-    <div class="card">
-        <label>➕ Other Expenses (₹)</label>
-        <input type="number" id="other" placeholder="Enter Other Expenses">
-    </div>
-
-    <div class="buttons">
-    <button onclick="calculate()">Calculate</button>
-    <button onclick="saveData()">Save</button>
-    <button onclick="resetData()">Reset</button>
-</div>
-
-    <div class="result">
-        <h2>Total Expenses</h2>
-        <h1>₹ <span id="totalExpense">0</span></h1>
-
-        <h2>Remaining Balance</h2>
-        <h1>₹ <span id="balance">0</span></h1>
-    </div>
-
-    <h2>📊 Expense Chart</h2>
-<canvas id="expenseChart"></canvas>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="script.js"></script>
+    <script src="script.js?v=3"></script>
 
 </body>
+
 </html>
