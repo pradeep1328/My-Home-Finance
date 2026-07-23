@@ -1,3 +1,4 @@
+let chart;
 function calculate() {
 
     let income = Number(document.getElementById("income").value) || 0;
