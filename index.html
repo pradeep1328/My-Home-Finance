@@ -1,24 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Home Finance</title>
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<h1>My Home Finance</h1>
+<div class="container">
 
-<h2>Income</h2>
-<input type="number" id="income" placeholder="Enter Income">
+    <h1>🏠 My Home Finance</h1>
 
-<h2>Expense</h2>
-<input type="number" id="expense" placeholder="Enter Expense">
+    <div class="card">
+        <label>💰 Monthly Income (₹)</label><br>
+        <input type="number" id="income" placeholder="Enter Monthly Income">
+    </div>
 
-<button onclick="calculate()">Calculate</button>
+    <div class="card">
+        <label>💸 Monthly Expense (₹)</label><br>
+        <input type="number" id="expense" placeholder="Enter Monthly Expense">
+    </div>
 
-<h2>Balance:</h2>
-<p id="balance">0</p>
+    <button onclick="calculate()">Calculate Balance</button>
+
+    <div class="result">
+        <h2>Remaining Balance</h2>
+        <h1>₹ <span id="balance">0</span></h1>
+    </div>
+
+</div>
 
 <script src="script.js"></script>
 
