@@ -32,3 +32,24 @@ function calculate() {
         document.getElementById("balance").style.color = "red";
     }
 }
+
+function saveData() {
+
+    localStorage.setItem("income", document.getElementById("income").value);
+    localStorage.setItem("groceries", document.getElementById("groceries").value);
+    localStorage.setItem("petrol", document.getElementById("petrol").value);
+    localStorage.setItem("emi", document.getElementById("emi").value);
+    localStorage.setItem("insurance", document.getElementById("insurance").value);
+    localStorage.setItem("school", document.getElementById("school").value);
+    localStorage.setItem("mobile", document.getElementById("mobile").value);
+    localStorage.setItem("other", document.getElementById("other").value);
+
+    alert("Data Saved Successfully!");
+}
+
+function resetData() {
+
+    localStorage.clear();
+    location.reload();
+
+}
