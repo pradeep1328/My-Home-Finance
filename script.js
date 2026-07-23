@@ -41,9 +41,10 @@ document.getElementById("balanceCard").innerHTML =
 }
 
 function saveData() {
-let month = document.getElementById("month").value;
+    let month = document.getElementById("month").value;
     
-    localStorage.setItem("income", document.getElementById("income").value);
+    localStorage.setItem(month + "_income", document.getElementById("income").value);
+    
     localStorage.setItem("groceries", document.getElementById("groceries").value);
     localStorage.setItem("petrol", document.getElementById("petrol").value);
     localStorage.setItem("emi", document.getElementById("emi").value);
