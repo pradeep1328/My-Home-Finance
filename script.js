@@ -25,7 +25,14 @@ function calculate() {
 
     document.getElementById("balance").innerHTML =
         balance.toLocaleString("en-IN");
+document.getElementById("incomeCard").innerHTML =
+    "₹" + income.toLocaleString("en-IN");
 
+document.getElementById("expenseCard").innerHTML =
+    "₹" + totalExpense.toLocaleString("en-IN");
+
+document.getElementById("balanceCard").innerHTML =
+    "₹" + balance.toLocaleString("en-IN");
     if (balance >= 0) {
         document.getElementById("balance").style.color = "green";
     } else {
