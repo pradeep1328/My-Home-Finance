@@ -65,7 +65,9 @@ function resetData() {
 
 window.onload = function () {
 
-    document.getElementById("income").value = localStorage.getItem("income") || "";
+    let month = document.getElementById("month").value;
+
+    document.getElementById("income").value = localStorage.getItem(month + "_income") || "";
     document.getElementById("groceries").value = localStorage.getItem("groceries") || "";
     document.getElementById("petrol").value = localStorage.getItem("petrol") || "";
     document.getElementById("emi").value = localStorage.getItem("emi") || "";
