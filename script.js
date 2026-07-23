@@ -53,3 +53,16 @@ function resetData() {
     location.reload();
 
 }
+
+window.onload = function () {
+
+    document.getElementById("income").value = localStorage.getItem("income") || "";
+    document.getElementById("groceries").value = localStorage.getItem("groceries") || "";
+    document.getElementById("petrol").value = localStorage.getItem("petrol") || "";
+    document.getElementById("emi").value = localStorage.getItem("emi") || "";
+    document.getElementById("insurance").value = localStorage.getItem("insurance") || "";
+    document.getElementById("school").value = localStorage.getItem("school") || "";
+    document.getElementById("mobile").value = localStorage.getItem("mobile") || "";
+    document.getElementById("other").value = localStorage.getItem("other") || "";
+
+};
