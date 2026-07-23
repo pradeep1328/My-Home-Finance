@@ -13,18 +13,51 @@
     <h1>🏠 My Home Finance</h1>
 
     <div class="card">
-        <label>💰 Monthly Income (₹)</label><br>
+        <label>💰 Monthly Income (₹)</label>
         <input type="number" id="income" placeholder="Enter Monthly Income">
     </div>
 
     <div class="card">
-        <label>💸 Monthly Expense (₹)</label><br>
-        <input type="number" id="expense" placeholder="Enter Monthly Expense">
+        <label>🛒 Groceries (₹)</label>
+        <input type="number" id="groceries" placeholder="Enter Groceries Expense">
     </div>
 
-    <button onclick="calculate()">Calculate Balance</button>
+    <div class="card">
+        <label>⛽ Petrol (₹)</label>
+        <input type="number" id="petrol" placeholder="Enter Petrol Expense">
+    </div>
+
+    <div class="card">
+        <label>🏦 EMI (₹)</label>
+        <input type="number" id="emi" placeholder="Enter EMI">
+    </div>
+
+    <div class="card">
+        <label>🛡️ Insurance (₹)</label>
+        <input type="number" id="insurance" placeholder="Enter Insurance">
+    </div>
+
+    <div class="card">
+        <label>🎓 School Fee (₹)</label>
+        <input type="number" id="school" placeholder="Enter School Fee">
+    </div>
+
+    <div class="card">
+        <label>📱 Mobile / Internet (₹)</label>
+        <input type="number" id="mobile" placeholder="Enter Mobile & Internet">
+    </div>
+
+    <div class="card">
+        <label>➕ Other Expenses (₹)</label>
+        <input type="number" id="other" placeholder="Enter Other Expenses">
+    </div>
+
+    <button onclick="calculate()">Calculate</button>
 
     <div class="result">
+        <h2>Total Expenses</h2>
+        <h1>₹ <span id="totalExpense">0</span></h1>
+
         <h2>Remaining Balance</h2>
         <h1>₹ <span id="balance">0</span></h1>
     </div>
