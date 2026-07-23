@@ -115,3 +115,4 @@ window.onload = function () {
 
     document.getElementById("month").addEventListener("change", loadData);
 };
+
