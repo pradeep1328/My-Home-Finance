@@ -1,17 +1,20 @@
 let chart;
 
+function getNumber(id) {
+    return Number(document.getElementById(id).value) || 0;
+}
+
 function calculate() {
+    const income = getNumber("income");
+    const groceries = getNumber("groceries");
+    const petrol = getNumber("petrol");
+    const emi = getNumber("emi");
+    const insurance = getNumber("insurance");
+    const school = getNumber("school");
+    const mobile = getNumber("mobile");
+    const other = getNumber("other");
 
-    let income = Number(document.getElementById("income").value) || 0;
-    let groceries = Number(document.getElementById("groceries").value) || 0;
-    let petrol = Number(document.getElementById("petrol").value) || 0;
-    let emi = Number(document.getElementById("emi").value) || 0;
-    let insurance = Number(document.getElementById("insurance").value) || 0;
-    let school = Number(document.getElementById("school").value) || 0;
-    let mobile = Number(document.getElementById("mobile").value) || 0;
-    let other = Number(document.getElementById("other").value) || 0;
-
-    let totalExpense =
+    const totalExpense =
         groceries +
         petrol +
         emi +
@@ -20,203 +23,267 @@ function calculate() {
         mobile +
         other;
 
-    let balance = income - totalExpense;
+    const balance = income - totalExpense;
 
-    document.getElementById("totalExpense").innerHTML =
+    document.getElementById("totalExpense").textContent =
         totalExpense.toLocaleString("en-IN");
 
-    document.getElementById("balance").innerHTML =
+    document.getElementById("balance").textContent =
         balance.toLocaleString("en-IN");
 
-    document.getElementById("incomeCard").innerHTML =
+    document.getElementById("incomeCard").textContent =
         "₹" + income.toLocaleString("en-IN");
 
-    document.getElementById("expenseCard").innerHTML =
+    document.getElementById("expenseCard").textContent =
         "₹" + totalExpense.toLocaleString("en-IN");
 
-    document.getElementById("balanceCard").innerHTML =
+    document.getElementById("balanceCard").textContent =
         "₹" + balance.toLocaleString("en-IN");
 
     if (balance >= 0) {
         document.getElementById("balance").style.color = "green";
-        document.getElementById("balanceCard").style.color = "green";
+        document.getElementById("balanceCard").style.color = "white";
     } else {
         document.getElementById("balance").style.color = "red";
-        document.getElementById("balanceCard").style.color = "red";
+        document.getElementById("balanceCard").style.color = "#ffeb3b";
     }
 
+    createExpenseChart({
+        groceries,
+        petrol,
+        emi,
+        insurance,
+        school,
+        mobile,
+        other
+    });
+}
+
+function createExpenseChart(expenses) {
     const chartCanvas = document.getElementById("expenseChart");
 
-    if (chartCanvas && typeof Chart !== "undefined") {
+    if (!chartCanvas || typeof Chart === "undefined") {
+        return;
+    }
 
-        const ctx = chartCanvas.getContext("2d");
+    const values = [
+        expenses.groceries,
+        expenses.petrol,
+        expenses.emi,
+        expenses.insurance,
+        expenses.school,
+        expenses.mobile,
+        expenses.other
+    ];
 
-        if (chart) {
-            chart.destroy();
-        }
+    if (chart) {
+        chart.destroy();
+    }
 
-        chart = new Chart(ctx, {
-            type: "pie",
+    if (typeof ChartDataLabels !== "undefined") {
+        Chart.register(ChartDataLabels);
+    }
 
-            data: {
-                labels: [
-                    "Groceries",
-                    "Petrol",
-                    "EMI",
-                    "Insurance",
-                    "School",
-                    "Mobile",
-                    "Other"
+    chart = new Chart(chartCanvas, {
+        type: "pie",
+
+        data: {
+            labels: [
+                "Groceries",
+                "Petrol",
+                "EMI",
+                "Insurance",
+                "School",
+                "Mobile",
+                "Other"
+            ],
+
+            datasets: [{
+                data: values,
+
+                backgroundColor: [
+                    "#4caf50",
+                    "#2196f3",
+                    "#ff9800",
+                    "#e91e63",
+                    "#9c27b0",
+                    "#00bcd4",
+                    "#795548"
                 ],
 
-                datasets: [{
-                    data: [
-                        groceries,
-                        petrol,
-                        emi,
-                        insurance,
-                        school,
-                        mobile,
-                        other
-                    ],
+                borderColor: "#ffffff",
+                borderWidth: 2
+            }]
+        },
 
-                    backgroundColor: [
-                        "#4CAF50",
-                        "#2196F3",
-                        "#FF9800",
-                        "#E91E63",
-                        "#9C27B0",
-                        "#00BCD4",
-                        "#795548"
-                    ],
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
 
-                    borderWidth: 1
-                }]
-            },
+            plugins: {
+                legend: {
+                    position: "bottom",
 
-            options: {
-                responsive: true,
+                    labels: {
+                        padding: 15,
+                        font: {
+                            size: 13
+                        }
+                    }
+                },
 
-                plugins: {
-                    legend: {
-                        position: "bottom"
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            const value = Number(context.raw) || 0;
+                            const total = context.dataset.data.reduce(
+                                function (sum, currentValue) {
+                                    return sum + Number(currentValue);
+                                },
+                                0
+                            );
+
+                            const percentage =
+                                total > 0
+                                    ? ((value / total) * 100).toFixed(1)
+                                    : "0.0";
+
+                            return (
+                                context.label +
+                                ": ₹" +
+                                value.toLocaleString("en-IN") +
+                                " (" +
+                                percentage +
+                                "%)"
+                            );
+                        }
+                    }
+                },
+
+                datalabels: {
+                    color: "#ffffff",
+
+                    font: {
+                        weight: "bold",
+                        size: 13
                     },
 
-                    title: {
-                        display: true,
-                        text: "Monthly Expense Breakdown"
+                    formatter: function (value, context) {
+                        const data =
+                            context.chart.data.datasets[0].data;
+
+                        const total = data.reduce(
+                            function (sum, currentValue) {
+                                return sum + Number(currentValue);
+                            },
+                            0
+                        );
+
+                        if (value === 0 || total === 0) {
+                            return "";
+                        }
+
+                        const percentage =
+                            ((value / total) * 100).toFixed(1);
+
+                        return percentage + "%";
                     }
                 }
             }
-        });
-    }
+        }
+    });
 }
 
-
 function saveData() {
+    const month = document.getElementById("month").value;
 
-    let month = document.getElementById("month").value;
+    const fields = [
+        "income",
+        "groceries",
+        "petrol",
+        "emi",
+        "insurance",
+        "school",
+        "mobile",
+        "other"
+    ];
 
-    localStorage.setItem(
-        month + "_income",
-        document.getElementById("income").value
-    );
-
-    localStorage.setItem(
-        month + "_groceries",
-        document.getElementById("groceries").value
-    );
-
-    localStorage.setItem(
-        month + "_petrol",
-        document.getElementById("petrol").value
-    );
-
-    localStorage.setItem(
-        month + "_emi",
-        document.getElementById("emi").value
-    );
-
-    localStorage.setItem(
-        month + "_insurance",
-        document.getElementById("insurance").value
-    );
-
-    localStorage.setItem(
-        month + "_school",
-        document.getElementById("school").value
-    );
-
-    localStorage.setItem(
-        month + "_mobile",
-        document.getElementById("mobile").value
-    );
-
-    localStorage.setItem(
-        month + "_other",
-        document.getElementById("other").value
-    );
+    fields.forEach(function (field) {
+        localStorage.setItem(
+            month + "_" + field,
+            document.getElementById(field).value
+        );
+    });
 
     calculate();
 
     alert("Data Saved Successfully!");
 }
 
-
 function loadData() {
+    const month = document.getElementById("month").value;
 
-    let month = document.getElementById("month").value;
+    const fields = [
+        "income",
+        "groceries",
+        "petrol",
+        "emi",
+        "insurance",
+        "school",
+        "mobile",
+        "other"
+    ];
 
-    document.getElementById("income").value =
-        localStorage.getItem(month + "_income") || "";
-
-    document.getElementById("groceries").value =
-        localStorage.getItem(month + "_groceries") || "";
-
-    document.getElementById("petrol").value =
-        localStorage.getItem(month + "_petrol") || "";
-
-    document.getElementById("emi").value =
-        localStorage.getItem(month + "_emi") || "";
-
-    document.getElementById("insurance").value =
-        localStorage.getItem(month + "_insurance") || "";
-
-    document.getElementById("school").value =
-        localStorage.getItem(month + "_school") || "";
-
-    document.getElementById("mobile").value =
-        localStorage.getItem(month + "_mobile") || "";
-
-    document.getElementById("other").value =
-        localStorage.getItem(month + "_other") || "";
+    fields.forEach(function (field) {
+        document.getElementById(field).value =
+            localStorage.getItem(month + "_" + field) || "";
+    });
 
     calculate();
 }
 
-
 function resetData() {
+    const month = document.getElementById("month").value;
 
-    let month = document.getElementById("month").value;
+    const confirmReset = confirm(
+        month + " month data మొత్తం delete చేయాలా?"
+    );
 
-    localStorage.removeItem(month + "_income");
-    localStorage.removeItem(month + "_groceries");
-    localStorage.removeItem(month + "_petrol");
-    localStorage.removeItem(month + "_emi");
-    localStorage.removeItem(month + "_insurance");
-    localStorage.removeItem(month + "_school");
-    localStorage.removeItem(month + "_mobile");
-    localStorage.removeItem(month + "_other");
+    if (!confirmReset) {
+        return;
+    }
+
+    const fields = [
+        "income",
+        "groceries",
+        "petrol",
+        "emi",
+        "insurance",
+        "school",
+        "mobile",
+        "other"
+    ];
+
+    fields.forEach(function (field) {
+        localStorage.removeItem(month + "_" + field);
+    });
 
     loadData();
+
+    alert("Data Reset Successfully!");
 }
 
+window.addEventListener("load", function () {
+    const monthSelect = document.getElementById("month");
 
-window.onload = function () {
+    const currentMonth = new Date().toLocaleString("en-US", {
+        month: "long"
+    });
+
+    if (monthSelect) {
+        monthSelect.value = currentMonth;
+        monthSelect.addEventListener("change", loadData);
+    }
 
     loadData();
-
-    document
-        .getElementById("month")
-        .addEventListener("change", loadData);
-};
+});
