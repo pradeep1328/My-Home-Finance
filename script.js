@@ -1,4 +1,5 @@
 let chart;
+
 function calculate() {
 
     let income = Number(document.getElementById("income").value) || 0;
@@ -43,72 +44,124 @@ function calculate() {
         document.getElementById("balance").style.color = "red";
         document.getElementById("balanceCard").style.color = "red";
     }
-}
-const ctx = document.getElementById("expenseChart").getContext("2d");
 
-if (chart) {
-    chart.destroy();
-}
+    const chartCanvas = document.getElementById("expenseChart");
 
-chart = new Chart(ctx, {
-    type: "pie",
-    data: {
-        labels: [
-            "Groceries",
-            "Petrol",
-            "EMI",
-            "Insurance",
-            "School",
-            "Mobile",
-            "Other"
-        ],
-        datasets: [{
-            data: [
-                groceries,
-                petrol,
-                emi,
-                insurance,
-                school,
-                mobile,
-                other
-            ],
-            backgroundColor: [
-                "#4CAF50",
-                "#2196F3",
-                "#FF9800",
-                "#E91E63",
-                "#9C27B0",
-                "#00BCD4",
-                "#795548"
-            ]
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: {
-                position: "bottom"
-            }
+    if (chartCanvas && typeof Chart !== "undefined") {
+
+        const ctx = chartCanvas.getContext("2d");
+
+        if (chart) {
+            chart.destroy();
         }
+
+        chart = new Chart(ctx, {
+            type: "pie",
+
+            data: {
+                labels: [
+                    "Groceries",
+                    "Petrol",
+                    "EMI",
+                    "Insurance",
+                    "School",
+                    "Mobile",
+                    "Other"
+                ],
+
+                datasets: [{
+                    data: [
+                        groceries,
+                        petrol,
+                        emi,
+                        insurance,
+                        school,
+                        mobile,
+                        other
+                    ],
+
+                    backgroundColor: [
+                        "#4CAF50",
+                        "#2196F3",
+                        "#FF9800",
+                        "#E91E63",
+                        "#9C27B0",
+                        "#00BCD4",
+                        "#795548"
+                    ],
+
+                    borderWidth: 1
+                }]
+            },
+
+            options: {
+                responsive: true,
+
+                plugins: {
+                    legend: {
+                        position: "bottom"
+                    },
+
+                    title: {
+                        display: true,
+                        text: "Monthly Expense Breakdown"
+                    }
+                }
+            }
+        });
     }
-});
+}
+
+
 function saveData() {
 
     let month = document.getElementById("month").value;
 
-    localStorage.setItem(month + "_income", document.getElementById("income").value);
-    localStorage.setItem(month + "_groceries", document.getElementById("groceries").value);
-    localStorage.setItem(month + "_petrol", document.getElementById("petrol").value);
-    localStorage.setItem(month + "_emi", document.getElementById("emi").value);
-    localStorage.setItem(month + "_insurance", document.getElementById("insurance").value);
-    localStorage.setItem(month + "_school", document.getElementById("school").value);
-    localStorage.setItem(month + "_mobile", document.getElementById("mobile").value);
-    localStorage.setItem(month + "_other", document.getElementById("other").value);
+    localStorage.setItem(
+        month + "_income",
+        document.getElementById("income").value
+    );
+
+    localStorage.setItem(
+        month + "_groceries",
+        document.getElementById("groceries").value
+    );
+
+    localStorage.setItem(
+        month + "_petrol",
+        document.getElementById("petrol").value
+    );
+
+    localStorage.setItem(
+        month + "_emi",
+        document.getElementById("emi").value
+    );
+
+    localStorage.setItem(
+        month + "_insurance",
+        document.getElementById("insurance").value
+    );
+
+    localStorage.setItem(
+        month + "_school",
+        document.getElementById("school").value
+    );
+
+    localStorage.setItem(
+        month + "_mobile",
+        document.getElementById("mobile").value
+    );
+
+    localStorage.setItem(
+        month + "_other",
+        document.getElementById("other").value
+    );
 
     calculate();
 
     alert("Data Saved Successfully!");
 }
+
 
 function loadData() {
 
@@ -141,6 +194,7 @@ function loadData() {
     calculate();
 }
 
+
 function resetData() {
 
     let month = document.getElementById("month").value;
@@ -157,10 +211,12 @@ function resetData() {
     loadData();
 }
 
+
 window.onload = function () {
 
     loadData();
 
-    document.getElementById("month").addEventListener("change", loadData);
+    document
+        .getElementById("month")
+        .addEventListener("change", loadData);
 };
-
