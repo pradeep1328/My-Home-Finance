@@ -9,297 +9,709 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>My Home Finance</title>
+    <title>My Finance</title>
 
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <div class="container">
+    <div class="app-container">
 
-        <header>
-            <h1>🏠 My Home Finance</h1>
-            <p>Monthly Income and Expense Tracker</p>
+        <!-- App Header -->
+
+        <header class="app-header">
+
+            <div>
+                <h1>💰 My Finance</h1>
+                <p>Personal Income, Expense and Account Manager</p>
+            </div>
+
         </header>
 
 
-        <!-- Month Selection -->
+        <!-- Navigation -->
 
-        <section class="section-box">
-
-            <h2>📅 Select Month</h2>
-
-            <select id="month">
-
-                <option value="January">January</option>
-                <option value="February">February</option>
-                <option value="March">March</option>
-                <option value="April">April</option>
-                <option value="May">May</option>
-                <option value="June">June</option>
-                <option value="July">July</option>
-                <option value="August">August</option>
-                <option value="September">September</option>
-                <option value="October">October</option>
-                <option value="November">November</option>
-                <option value="December">December</option>
-
-            </select>
-
-        </section>
-
-
-        <!-- Dashboard Cards -->
-
-        <section class="dashboard">
-
-            <div class="dashboard-card">
-
-                <h3>Income</h3>
-
-                <p id="incomeCard">₹0</p>
-
-            </div>
-
-
-            <div class="dashboard-card">
-
-                <h3>Total Expense</h3>
-
-                <p id="expenseCard">₹0</p>
-
-            </div>
-
-
-            <div class="dashboard-card">
-
-                <h3>Balance</h3>
-
-                <p id="balanceCard">₹0</p>
-
-            </div>
-
-        </section>
-
-
-        <!-- Income Section -->
-
-        <section class="section-box">
-
-            <h2>💰 Monthly Income</h2>
-
-            <label for="income">
-                Salary / Total Income
-            </label>
-
-            <input
-                type="number"
-                id="income"
-                placeholder="Enter monthly income"
-                min="0"
-            >
-
-        </section>
-
-
-        <!-- Expense Section -->
-
-        <section class="section-box">
-
-            <h2>💸 Monthly Expenses</h2>
-
-
-            <label for="groceries">
-                Groceries
-            </label>
-
-            <input
-                type="number"
-                id="groceries"
-                placeholder="Enter groceries amount"
-                min="0"
-            >
-
-
-            <label for="petrol">
-                Petrol
-            </label>
-
-            <input
-                type="number"
-                id="petrol"
-                placeholder="Enter petrol amount"
-                min="0"
-            >
-
-
-            <label for="emi">
-                EMI
-            </label>
-
-            <input
-                type="number"
-                id="emi"
-                placeholder="Enter EMI amount"
-                min="0"
-            >
-
-
-            <label for="insurance">
-                Insurance
-            </label>
-
-            <input
-                type="number"
-                id="insurance"
-                placeholder="Enter insurance amount"
-                min="0"
-            >
-
-
-            <label for="school">
-                School Fees
-            </label>
-
-            <input
-                type="number"
-                id="school"
-                placeholder="Enter school fees"
-                min="0"
-            >
-
-
-            <label for="mobile">
-                Mobile and Internet
-            </label>
-
-            <input
-                type="number"
-                id="mobile"
-                placeholder="Enter mobile and internet amount"
-                min="0"
-            >
-
-
-            <label for="other">
-                Other Expenses
-            </label>
-
-            <input
-                type="number"
-                id="other"
-                placeholder="Enter other expenses"
-                min="0"
-            >
-
-        </section>
-
-
-        <!-- Buttons -->
-
-        <section class="button-section">
+        <nav class="navigation">
 
             <button
                 type="button"
-                onclick="calculate()"
-                class="calculate-button"
+                class="nav-button active"
+                onclick="showSection('dashboardSection', this)"
             >
-                Calculate
+                🏠 Dashboard
             </button>
-
 
             <button
                 type="button"
-                onclick="saveData()"
-                class="save-button"
+                class="nav-button"
+                onclick="showSection('accountsSection', this)"
             >
-                Save Data
+                💼 Accounts
             </button>
 
+        </nav>
 
-            <button
-                type="button"
-                onclick="resetData()"
-                class="reset-button"
+
+        <!-- Dashboard Section -->
+
+        <main>
+
+            <section
+                id="dashboardSection"
+                class="page-section active-section"
             >
-                Reset
-            </button>
 
-        </section>
-
-
-        <!-- Result Section -->
-
-        <section class="section-box result-section">
-
-            <h2>📊 Monthly Summary</h2>
-
-            <div class="result-row">
-
-                <span>Total Expense</span>
-
-                <strong>
-                    ₹<span id="totalExpense">0</span>
-                </strong>
-
-            </div>
+                <div class="section-heading">
+                    <h2>🏠 Dashboard</h2>
+                    <p>Your monthly income and expense summary</p>
+                </div>
 
 
-            <div class="result-row">
+                <!-- Month Selection -->
 
-                <span>Remaining Balance</span>
+                <div class="card">
 
-                <strong>
-                    ₹<span id="balance">0</span>
-                </strong>
+                    <label for="month">
+                        📅 Select Month
+                    </label>
 
-            </div>
+                    <select id="month">
 
-        </section>
+                        <option value="January">January</option>
+                        <option value="February">February</option>
+                        <option value="March">March</option>
+                        <option value="April">April</option>
+                        <option value="May">May</option>
+                        <option value="June">June</option>
+                        <option value="July">July</option>
+                        <option value="August">August</option>
+                        <option value="September">September</option>
+                        <option value="October">October</option>
+                        <option value="November">November</option>
+                        <option value="December">December</option>
 
+                    </select>
 
-        <!-- Expense Pie Chart -->
-
-        <section class="section-box chart-section">
-
-            <h2>📊 Expense Chart</h2>
-
-            <p>
-                Percentage of each expense category
-            </p>
-
-            <div class="chart-container">
-
-                <canvas id="expenseChart"></canvas>
-
-            </div>
-
-        </section>
+                </div>
 
 
-        <footer>
+                <!-- Dashboard Summary Cards -->
 
-            <p>My Home Finance App</p>
+                <div class="summary-grid">
+
+                    <div class="summary-card income-card">
+
+                        <h3>Total Income</h3>
+
+                        <p id="incomeCard">₹0</p>
+
+                    </div>
+
+
+                    <div class="summary-card expense-card">
+
+                        <h3>Total Expense</h3>
+
+                        <p id="expenseCard">₹0</p>
+
+                    </div>
+
+
+                    <div class="summary-card balance-card">
+
+                        <h3>Remaining Balance</h3>
+
+                        <p id="balanceCard">₹0</p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Income Section -->
+
+                <div class="card">
+
+                    <h2>💰 Monthly Income</h2>
+
+                    <div class="form-group">
+
+                        <label for="income">
+                            Income Amount
+                        </label>
+
+                        <input
+                            type="number"
+                            id="income"
+                            placeholder="Enter monthly income"
+                            min="0"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- Expenses Section -->
+
+                <div class="card">
+
+                    <h2>💸 Monthly Expenses</h2>
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+
+                            <label for="groceries">
+                                Groceries
+                            </label>
+
+                            <input
+                                type="number"
+                                id="groceries"
+                                placeholder="Enter amount"
+                                min="0"
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="petrol">
+                                Petrol
+                            </label>
+
+                            <input
+                                type="number"
+                                id="petrol"
+                                placeholder="Enter amount"
+                                min="0"
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="emi">
+                                EMI
+                            </label>
+
+                            <input
+                                type="number"
+                                id="emi"
+                                placeholder="Enter amount"
+                                min="0"
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="insurance">
+                                Insurance
+                            </label>
+
+                            <input
+                                type="number"
+                                id="insurance"
+                                placeholder="Enter amount"
+                                min="0"
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="school">
+                                School Fees
+                            </label>
+
+                            <input
+                                type="number"
+                                id="school"
+                                placeholder="Enter amount"
+                                min="0"
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="mobile">
+                                Mobile / Internet
+                            </label>
+
+                            <input
+                                type="number"
+                                id="mobile"
+                                placeholder="Enter amount"
+                                min="0"
+                            >
+
+                        </div>
+
+
+                        <div class="form-group full-width">
+
+                            <label for="other">
+                                Other Expenses
+                            </label>
+
+                            <input
+                                type="number"
+                                id="other"
+                                placeholder="Enter amount"
+                                min="0"
+                            >
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Dashboard Buttons -->
+
+                <div class="button-group">
+
+                    <button
+                        type="button"
+                        class="primary-button"
+                        onclick="calculate()"
+                    >
+                        Calculate
+                    </button>
+
+                    <button
+                        type="button"
+                        class="save-button"
+                        onclick="saveData()"
+                    >
+                        Save Data
+                    </button>
+
+                    <button
+                        type="button"
+                        class="danger-button"
+                        onclick="resetData()"
+                    >
+                        Reset
+                    </button>
+
+                </div>
+
+
+                <!-- Monthly Summary -->
+
+                <div class="card">
+
+                    <h2>📊 Monthly Summary</h2>
+
+                    <div class="result-row">
+
+                        <span>Total Expense</span>
+
+                        <strong>
+                            ₹<span id="totalExpense">0</span>
+                        </strong>
+
+                    </div>
+
+
+                    <div class="result-row">
+
+                        <span>Remaining Balance</span>
+
+                        <strong>
+                            ₹<span id="balance">0</span>
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Pie Chart -->
+
+                <div class="card chart-card">
+
+                    <h2>📊 Expense Chart</h2>
+
+                    <p>
+                        Percentage of each expense category
+                    </p>
+
+                    <div class="chart-container">
+
+                        <canvas id="expenseChart"></canvas>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- Accounts Section -->
+
+            <section
+                id="accountsSection"
+                class="page-section"
+            >
+
+                <div class="section-heading">
+
+                    <h2>💼 My Accounts</h2>
+
+                    <p>
+                        Add and manage bank accounts, credit cards, cash and wallets
+                    </p>
+
+                </div>
+
+
+                <!-- Account Summary -->
+
+                <div class="summary-grid">
+
+                    <div class="summary-card account-count-card">
+
+                        <h3>Total Accounts</h3>
+
+                        <p id="totalAccountsCard">0</p>
+
+                    </div>
+
+
+                    <div class="summary-card account-balance-card">
+
+                        <h3>Total Account Balance</h3>
+
+                        <p id="totalAccountBalanceCard">₹0</p>
+
+                    </div>
+
+
+                    <div class="summary-card credit-outstanding-card">
+
+                        <h3>Credit Card Outstanding</h3>
+
+                        <p id="creditOutstandingCard">₹0</p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Add / Edit Account Form -->
+
+                <div class="card">
+
+                    <h2 id="accountFormTitle">
+                        ➕ Add New Account
+                    </h2>
+
+                    <input
+                        type="hidden"
+                        id="editingAccountId"
+                    >
+
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+
+                            <label for="accountName">
+                                Account Name
+                            </label>
+
+                            <input
+                                type="text"
+                                id="accountName"
+                                placeholder="Example: HDFC Bank"
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="accountType">
+                                Account Type
+                            </label>
+
+                            <select id="accountType">
+
+                                <option value="Bank">
+                                    Bank Account
+                                </option>
+
+                                <option value="Credit Card">
+                                    Credit Card
+                                </option>
+
+                                <option value="Cash">
+                                    Cash
+                                </option>
+
+                                <option value="Wallet">
+                                    Wallet
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="openingBalance">
+                                Opening Balance
+                            </label>
+
+                            <input
+                                type="number"
+                                id="openingBalance"
+                                placeholder="Enter opening balance"
+                                min="0"
+                            >
+
+                        </div>
+
+
+                        <div
+                            class="form-group"
+                            id="creditLimitGroup"
+                        >
+
+                            <label for="creditLimit">
+                                Credit Limit
+                            </label>
+
+                            <input
+                                type="number"
+                                id="creditLimit"
+                                placeholder="Only for credit card"
+                                min="0"
+                            >
+
+                        </div>
+
+
+                        <div
+                            class="form-group"
+                            id="creditOutstandingGroup"
+                        >
+
+                            <label for="creditOutstanding">
+                                Current Outstanding
+                            </label>
+
+                            <input
+                                type="number"
+                                id="creditOutstanding"
+                                placeholder="Only for credit card"
+                                min="0"
+                            >
+
+                        </div>
+
+
+                        <div
+                            class="form-group"
+                            id="billDateGroup"
+                        >
+
+                            <label for="billDate">
+                                Bill Date
+                            </label>
+
+                            <input
+                                type="number"
+                                id="billDate"
+                                placeholder="Example: 10"
+                                min="1"
+                                max="31"
+                            >
+
+                        </div>
+
+
+                        <div
+                            class="form-group"
+                            id="dueDateGroup"
+                        >
+
+                            <label for="dueDate">
+                                Due Date
+                            </label>
+
+                            <input
+                                type="number"
+                                id="dueDate"
+                                placeholder="Example: 17"
+                                min="1"
+                                max="31"
+                            >
+
+                        </div>
+
+
+                        <div class="form-group full-width">
+
+                            <label for="accountNotes">
+                                Notes
+                            </label>
+
+                            <textarea
+                                id="accountNotes"
+                                placeholder="Optional notes"
+                                rows="3"
+                            ></textarea>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="button-group">
+
+                        <button
+                            type="button"
+                            id="saveAccountButton"
+                            class="primary-button"
+                            onclick="saveAccount()"
+                        >
+                            Save Account
+                        </button>
+
+
+                        <button
+                            type="button"
+                            id="cancelAccountEditButton"
+                            class="secondary-button hidden"
+                            onclick="cancelAccountEdit()"
+                        >
+                            Cancel Edit
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Account Filter -->
+
+                <div class="card">
+
+                    <div class="account-toolbar">
+
+                        <div class="form-group">
+
+                            <label for="accountFilter">
+                                Filter Accounts
+                            </label>
+
+                            <select
+                                id="accountFilter"
+                                onchange="displayAccounts()"
+                            >
+
+                                <option value="All">
+                                    All Accounts
+                                </option>
+
+                                <option value="Bank">
+                                    Bank Accounts
+                                </option>
+
+                                <option value="Credit Card">
+                                    Credit Cards
+                                </option>
+
+                                <option value="Cash">
+                                    Cash
+                                </option>
+
+                                <option value="Wallet">
+                                    Wallets
+                                </option>
+
+                                <option value="Active">
+                                    Active Accounts
+                                </option>
+
+                                <option value="Inactive">
+                                    Inactive Accounts
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Accounts List -->
+
+                <div class="card">
+
+                    <h2>📋 Accounts List</h2>
+
+                    <div id="accountsList">
+
+                        <div class="empty-message">
+
+                            <p>No accounts added yet.</p>
+
+                            <span>
+                                Add your first bank account, credit card, cash or wallet.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+
+        <!-- Footer -->
+
+        <footer class="app-footer">
+
+            <p>My Finance App</p>
 
         </footer>
 
     </div>
 
 
-    <!-- Chart.js Library -->
+    <!-- Chart.js -->
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 
-    <!-- Percentage Plugin -->
+    <!-- Chart Percentage Plugin -->
 
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
 
     <!-- App JavaScript -->
 
-    <script src="script.js?v=3"></script>
+    <script src="script.js?v=4"></script>
 
 </body>
 
