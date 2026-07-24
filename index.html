@@ -4,14 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0f172a" />
-  <title>My Finance v3.1</title>
+  <title>My Finance v3.2</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="topbar">
     <div>
       <h1>My Finance</h1>
-      <p>Personal Finance Manager <span class="version">v3.1</span></p>
+      <p>Personal Finance Manager <span class="version">v3.2</span></p>
     </div>
     <button id="menuBtn" class="menu-btn" aria-label="Toggle menu">☰</button>
   </header>
@@ -24,6 +24,8 @@
     <button class="nav-btn" data-page="transfer">🔁 Transfer</button>
     <button class="nav-btn" data-page="history">📜 History</button>
     <button class="nav-btn" data-page="reports">📊 Reports</button>
+    <button class="nav-btn" data-page="budget">🎯 Budget</button>
+    <button class="nav-btn" data-page="reminders">🔔 Reminders</button>
     <button class="nav-btn" data-page="backup">💾 Backup</button>
   </nav>
 
@@ -60,6 +62,10 @@
           <h3>Recent Transactions</h3>
           <div id="recentTransactions" class="list"></div>
         </div>
+      </div>
+      <div class="grid two">
+        <div class="panel"><h3>Monthly Budget Status</h3><div id="dashBudget" class="bar-list"></div></div>
+        <div class="panel"><h3>Upcoming Reminders</h3><div id="dashReminders" class="list"></div></div>
       </div>
     </section>
 
@@ -181,6 +187,37 @@
         <div class="panel"><h3>Expense by Category</h3><div id="expenseReport" class="bar-list"></div></div>
         <div class="panel"><h3>Income by Category</h3><div id="incomeReport" class="bar-list"></div></div>
       </div>
+      <div class="grid two">
+        <div class="panel chart-panel"><h3>Expense Share</h3><canvas id="expenseChart" width="500" height="300"></canvas></div>
+        <div class="panel chart-panel"><h3>Last 6 Months Trend</h3><canvas id="trendChart" width="500" height="300"></canvas></div>
+      </div>
+    </section>
+
+
+    <section id="budget" class="page">
+      <h2>Monthly Budget</h2>
+      <form id="budgetForm" class="panel form-grid">
+        <input type="hidden" id="budgetId" />
+        <label>Month<input id="budgetMonth" type="month" required /></label>
+        <label>Category<select id="budgetCategory"></select></label>
+        <label>Budget Amount<input id="budgetAmount" type="number" min="1" step="0.01" required /></label>
+        <div class="form-actions"><button class="btn" type="submit">Save Budget</button><button class="btn secondary" type="button" id="cancelBudgetEdit">Cancel</button></div>
+      </form>
+      <div id="budgetList" class="panel"></div>
+    </section>
+
+    <section id="reminders" class="page">
+      <h2>Payment Reminders</h2>
+      <form id="reminderForm" class="panel form-grid">
+        <input type="hidden" id="reminderId" />
+        <label>Title<input id="reminderTitle" required placeholder="Loan EMI / Credit Card Bill" /></label>
+        <label>Due Date<input id="reminderDate" type="date" required /></label>
+        <label>Amount<input id="reminderAmount" type="number" min="0" step="0.01" value="0" /></label>
+        <label>Repeat<select id="reminderRepeat"><option value="none">One Time</option><option value="monthly">Every Month</option><option value="yearly">Every Year</option></select></label>
+        <label class="full">Notes<textarea id="reminderNotes" rows="2"></textarea></label>
+        <div class="form-actions"><button class="btn" type="submit">Save Reminder</button><button class="btn secondary" type="button" id="cancelReminderEdit">Cancel</button></div>
+      </form>
+      <div id="reminderList" class="panel"></div>
     </section>
 
     <section id="backup" class="page">

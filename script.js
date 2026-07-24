@@ -3,7 +3,7 @@ const incomeCategories=["Salary","Bonus","Refund","Friend Returned","Loan Receiv
 const expenseCategories=["Groceries","Petrol","EMI","Insurance","School Fees","Mobile/Internet","Medical","Shopping","Travel","Bills","Other"];
 const paymentMethods=["Google Pay","PhonePe","Paytm","CRED Pay","Bank Transfer","Debit Card","Credit Card","Net Banking","Cash","Auto Debit","Cheque"];
 
-let db={accounts:[],transactions:[]};
+let db={accounts:[],transactions:[],budgets:[],reminders:[]};
 let dashRange=null, reportRange=null;
 
 const $=id=>document.getElementById(id);
@@ -18,7 +18,7 @@ function saveDB(){localStorage.setItem(APP_KEY,JSON.stringify(db))}
 function loadDB(){
   try{const raw=localStorage.getItem(APP_KEY); if(raw) db=JSON.parse(raw)}
   catch(e){console.error(e)}
-  if(!db.accounts)db.accounts=[]; if(!db.transactions)db.transactions=[];
+  if(!db.accounts)db.accounts=[]; if(!db.transactions)db.transactions=[]; if(!db.budgets)db.budgets=[]; if(!db.reminders)db.reminders=[];
 }
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2200)}
 function fillSelect(id,items){$(id).innerHTML=items.map(x=>`<option value="${x}">${x}</option>`).join("")}
@@ -172,9 +172,9 @@ function barsHtml(obj){
 function renderReports(){
   const r=reportRange||monthRange(),s=rangeStats(r);
   $("reportIncome").textContent=money(s.income);$("reportExpense").textContent=money(s.expense);$("reportNet").textContent=money(s.net);
-  $("expenseReport").innerHTML=barsHtml(s.expCat);$("incomeReport").innerHTML=barsHtml(s.incCat)
+  $("expenseReport").innerHTML=barsHtml(s.expCat);$("incomeReport").innerHTML=barsHtml(s.incCat);drawExpenseChart(s.expCat);drawTrendChart()
 }
-function refreshAll(){renderAccountOptions();renderAccounts();renderHistory();renderDashboard();renderReports()}
+function refreshAll(){renderAccountOptions();renderAccounts();renderHistory();renderDashboard();renderReports();renderBudgets();renderReminders()}
 
 function showPage(id){
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===id));
@@ -183,7 +183,7 @@ function showPage(id){
 }
 
 function downloadBackup(){
-  const blob=new Blob([JSON.stringify({version:"3.1",exportedAt:new Date().toISOString(),data:db},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({version:"3.2",exportedAt:new Date().toISOString(),data:db},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`My-Finance-Backup-${today()}.json`;a.click();URL.revokeObjectURL(a.href)
 }
 function restoreBackup(){
@@ -197,11 +197,31 @@ function restoreBackup(){
   };reader.readAsText(f)
 }
 
+
+function currentMonth(){return today().slice(0,7)}
+function monthExpense(month,category){return db.transactions.filter(t=>t.type==="expense"&&t.date.startsWith(month)&&t.category===category).reduce((s,t)=>s+t.amount,0)}
+function saveBudget(e){e.preventDefault();const id=$("budgetId").value;const b={id:id||uid(),month:$("budgetMonth").value,category:$("budgetCategory").value,amount:Number($("budgetAmount").value)};if(!b.month||b.amount<=0)return toast("Enter valid budget");const duplicate=db.budgets.find(x=>x.month===b.month&&x.category===b.category&&x.id!==id);if(duplicate)return toast("Budget already exists for this category");if(id)db.budgets[db.budgets.findIndex(x=>x.id===id)]=b;else db.budgets.push(b);saveDB();resetBudget();refreshAll();toast("Budget saved")}
+function resetBudget(){$("budgetForm").reset();$("budgetId").value="";$("budgetMonth").value=currentMonth()}
+window.editBudget=id=>{const b=db.budgets.find(x=>x.id===id);if(!b)return;$("budgetId").value=b.id;$("budgetMonth").value=b.month;$("budgetCategory").value=b.category;$("budgetAmount").value=b.amount;showPage("budget")}
+window.deleteBudget=id=>{if(confirm("Delete this budget?")){db.budgets=db.budgets.filter(x=>x.id!==id);saveDB();refreshAll()}}
+function budgetHtml(month,compact=false){const list=db.budgets.filter(b=>b.month===month);if(!list.length)return '<div class="empty">No budget set for this month.</div>';return list.map(b=>{const spent=monthExpense(month,b.category),pct=b.amount?spent/b.amount*100:0,cls=pct>100?"status-over":pct>=80?"status-warn":"status-ok";return `<div class="budget-row"><strong>${escapeHtml(b.category)}</strong><span>${money(spent)} / ${money(b.amount)}</span><span class="${cls}">${pct.toFixed(0)}%</span>${compact?"":`<div class="row-actions"><button class="icon-btn edit" onclick="editBudget('${b.id}')">Edit</button><button class="icon-btn delete" onclick="deleteBudget('${b.id}')">Delete</button></div>`}</div>`}).join("")}
+function renderBudgets(){$("budgetList").innerHTML=`<h3>${currentMonth()} Budget</h3>${budgetHtml(currentMonth())}`;if($("dashBudget"))$("dashBudget").innerHTML=budgetHtml(currentMonth(),true)}
+function saveReminder(e){e.preventDefault();const id=$("reminderId").value;const r={id:id||uid(),title:$("reminderTitle").value.trim(),date:$("reminderDate").value,amount:Number($("reminderAmount").value||0),repeat:$("reminderRepeat").value,notes:$("reminderNotes").value.trim(),paid:false};if(!r.title||!r.date)return toast("Enter title and due date");const old=db.reminders.find(x=>x.id===id);if(old)r.paid=old.paid;if(id)db.reminders[db.reminders.findIndex(x=>x.id===id)]=r;else db.reminders.push(r);saveDB();resetReminder();refreshAll();toast("Reminder saved")}
+function resetReminder(){$("reminderForm").reset();$("reminderId").value="";$("reminderDate").value=today();$("reminderAmount").value=0}
+function effectiveDate(r){let d=parseDate(r.date),now=parseDate(today());if(r.repeat==="monthly"){while(d<now)d=new Date(d.getFullYear(),d.getMonth()+1,d.getDate())}if(r.repeat==="yearly"){while(d<now)d=new Date(d.getFullYear()+1,d.getMonth(),d.getDate())}return d.toISOString().slice(0,10)}
+window.editReminder=id=>{const r=db.reminders.find(x=>x.id===id);if(!r)return;$("reminderId").value=r.id;$("reminderTitle").value=r.title;$("reminderDate").value=r.date;$("reminderAmount").value=r.amount;$("reminderRepeat").value=r.repeat;$("reminderNotes").value=r.notes||"";showPage("reminders")}
+window.toggleReminder=id=>{const r=db.reminders.find(x=>x.id===id);if(r){r.paid=!r.paid;saveDB();refreshAll()}}
+window.deleteReminder=id=>{if(confirm("Delete this reminder?")){db.reminders=db.reminders.filter(x=>x.id!==id);saveDB();refreshAll()}}
+function reminderHtml(compact=false){const now=parseDate(today());const rows=db.reminders.map(r=>({...r,effective:effectiveDate(r)})).sort((a,b)=>a.effective.localeCompare(b.effective));const visible=compact?rows.filter(r=>{const days=(parseDate(r.effective)-now)/86400000;return days<=30&&!r.paid}).slice(0,5):rows;if(!visible.length)return '<div class="empty">No reminders.</div>';return visible.map(r=>{const days=Math.ceil((parseDate(r.effective)-now)/86400000),cl=days<0?"overdue":days<=7?"due-soon":"";return `<div class="reminder-row ${cl}"><div><strong>${escapeHtml(r.title)}</strong><div class="muted">${fmtDate(r.effective)} · ${r.repeat}</div></div><span>${money(r.amount)}</span><span>${r.paid?'<span class="paid-chip">Paid</span>':days<0?`${Math.abs(days)} days overdue`:days===0?"Due today":`${days} days left`}</span>${compact?"":`<div class="row-actions"><button class="icon-btn edit" onclick="editReminder('${r.id}')">Edit</button><button class="icon-btn" onclick="toggleReminder('${r.id}')">${r.paid?"Undo":"Paid"}</button><button class="icon-btn delete" onclick="deleteReminder('${r.id}')">Delete</button></div>`}</div>`}).join("")}
+function renderReminders(){$("reminderList").innerHTML=reminderHtml(false);if($("dashReminders"))$("dashReminders").innerHTML=reminderHtml(true)}
+function drawExpenseChart(obj){const c=$("expenseChart");if(!c)return;const x=c.getContext("2d"),w=c.width,h=c.height;x.clearRect(0,0,w,h);const entries=Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,6),total=entries.reduce((s,e)=>s+e[1],0);if(!total){x.fillText("No expense data",20,30);return}const colors=["#2563eb","#059669","#d97706","#dc2626","#7c3aed","#0891b2"];let start=-Math.PI/2;entries.forEach(([k,v],i)=>{const a=v/total*Math.PI*2;x.beginPath();x.moveTo(150,145);x.arc(150,145,100,start,start+a);x.fillStyle=colors[i];x.fill();start+=a;x.fillStyle=colors[i];x.fillRect(285,35+i*36,14,14);x.fillStyle="#172033";x.font="14px Arial";x.fillText(`${k} ${(v/total*100).toFixed(0)}%`,307,47+i*36)})}
+function drawTrendChart(){const c=$("trendChart");if(!c)return;const x=c.getContext("2d"),w=c.width,h=c.height;x.clearRect(0,0,w,h);const now=new Date(),months=[];for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1),key=d.toISOString().slice(0,7);months.push({key,label:d.toLocaleDateString("en-IN",{month:"short"}),income:0,expense:0})}db.transactions.forEach(t=>{const m=months.find(x=>x.key===t.date.slice(0,7));if(m&&(t.type==="income"||t.type==="expense"))m[t.type]+=t.amount});const max=Math.max(1,...months.flatMap(m=>[m.income,m.expense]));x.strokeStyle="#cbd5e1";x.beginPath();x.moveTo(45,20);x.lineTo(45,250);x.lineTo(485,250);x.stroke();months.forEach((m,i)=>{const gx=70+i*70,ih=m.income/max*190,eh=m.expense/max*190;x.fillStyle="#059669";x.fillRect(gx,250-ih,20,ih);x.fillStyle="#dc2626";x.fillRect(gx+24,250-eh,20,eh);x.fillStyle="#172033";x.font="12px Arial";x.fillText(m.label,gx+5,270)});x.fillStyle="#059669";x.fillRect(330,12,12,12);x.fillStyle="#172033";x.fillText("Income",347,22);x.fillStyle="#dc2626";x.fillRect(410,12,12,12);x.fillStyle="#172033";x.fillText("Expense",427,22)}
+
 document.addEventListener("DOMContentLoaded",()=>{
   loadDB();
-  fillSelect("incomeCategory",incomeCategories);fillSelect("expenseCategory",expenseCategories);
+  fillSelect("incomeCategory",incomeCategories);fillSelect("expenseCategory",expenseCategories);fillSelect("budgetCategory",expenseCategories);
   ["incomeMethod","expenseMethod","transferMethod"].forEach(id=>fillSelect(id,paymentMethods));
-  ["incomeDate","expenseDate","transferDate"].forEach(id=>$(id).value=today());
+  ["incomeDate","expenseDate","transferDate","reminderDate"].forEach(id=>$(id).value=today());$("budgetMonth").value=currentMonth();
   const mr=monthRange();["dashFrom","reportFrom"].forEach(id=>$(id).value=mr.from);["dashTo","reportTo"].forEach(id=>$(id).value=mr.to);
 
   document.querySelectorAll(".nav-btn").forEach(b=>b.onclick=()=>showPage(b.dataset.page));
@@ -216,7 +236,8 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("resetDashFilter").onclick=()=>{dashRange=monthRange();$("dashFrom").value=dashRange.from;$("dashTo").value=dashRange.to;renderDashboard()};
   $("applyReport").onclick=()=>{if(!$("reportFrom").value||!$("reportTo").value)return toast("Select both dates");reportRange={from:$("reportFrom").value,to:$("reportTo").value};renderReports()};
   $("resetReport").onclick=()=>{reportRange=monthRange();$("reportFrom").value=reportRange.from;$("reportTo").value=reportRange.to;renderReports()};
+  $("budgetForm").onsubmit=saveBudget;$("cancelBudgetEdit").onclick=resetBudget;$("reminderForm").onsubmit=saveReminder;$("cancelReminderEdit").onclick=resetReminder;
   $("downloadBackup").onclick=downloadBackup;$("restoreBackup").onclick=restoreBackup;
-  $("resetAllData").onclick=()=>{if(confirm("Delete all accounts and transactions?")){db={accounts:[],transactions:[]};saveDB();refreshAll();toast("All data deleted")}};
+  $("resetAllData").onclick=()=>{if(confirm("Delete all accounts and transactions?")){db={accounts:[],transactions:[],budgets:[],reminders:[]};saveDB();refreshAll();toast("All data deleted")}};
   refreshAll()
 });
