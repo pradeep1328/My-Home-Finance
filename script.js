@@ -1,816 +1,222 @@
-const STORAGE = {
-  accounts: "mf_accounts_v30",
-  transactions: "mf_transactions_v30"
-};
+const APP_KEY="myFinance_v31";
+const incomeCategories=["Salary","Bonus","Refund","Friend Returned","Loan Received","Interest","Gift","Rental Income","Other"];
+const expenseCategories=["Groceries","Petrol","EMI","Insurance","School Fees","Mobile/Internet","Medical","Shopping","Travel","Bills","Other"];
+const paymentMethods=["Google Pay","PhonePe","Paytm","CRED Pay","Bank Transfer","Debit Card","Credit Card","Net Banking","Cash","Auto Debit","Cheque"];
 
-const LEGACY_KEYS = {
-  accounts: ["mf_accounts_v21"],
-  transactions: ["mf_transactions_v21"]
-};
+let db={accounts:[],transactions:[]};
+let dashRange=null, reportRange=null;
 
-const PAYMENT_METHODS = [
-  "Google Pay","PhonePe","Paytm","CRED Pay","Bank Transfer","Debit Card",
-  "Credit Card","Net Banking","Cash","Auto Debit","Cheque"
-];
+const $=id=>document.getElementById(id);
+const money=n=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:2}).format(Number(n||0));
+const today=()=>new Date().toISOString().slice(0,10);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const parseDate=s=>new Date(s+"T00:00:00");
+const fmtDate=s=>parseDate(s).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"2-digit"});
+const inRange=(d,range)=>!range||(parseDate(d)>=parseDate(range.from)&&parseDate(d)<=parseDate(range.to));
 
-const $ = id => document.getElementById(id);
-const money = value => "₹" + Number(value || 0).toLocaleString("en-IN", {maximumFractionDigits: 2});
-const numberValue = id => Number($(id).value) || 0;
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-const todayText = () => new Date().toISOString().slice(0, 10);
-const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, ch => ({
-  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-}[ch]));
-
-function readJson(key) {
-  try {
-    return JSON.parse(localStorage.getItem(key)) || [];
-  } catch {
-    return [];
-  }
+function saveDB(){localStorage.setItem(APP_KEY,JSON.stringify(db))}
+function loadDB(){
+  try{const raw=localStorage.getItem(APP_KEY); if(raw) db=JSON.parse(raw)}
+  catch(e){console.error(e)}
+  if(!db.accounts)db.accounts=[]; if(!db.transactions)db.transactions=[];
+}
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2200)}
+function fillSelect(id,items){$(id).innerHTML=items.map(x=>`<option value="${x}">${x}</option>`).join("")}
+function monthRange(){
+  const d=new Date(), y=d.getFullYear(), m=d.getMonth();
+  const from=new Date(y,m,1), to=new Date(y,m+1,0);
+  const iso=x=>x.toISOString().slice(0,10);
+  return {from:iso(from),to:iso(to)}
 }
 
-function saveJson(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
-}
-
-function getAccounts() {
-  return readJson(STORAGE.accounts);
-}
-
-function getTransactions() {
-  return readJson(STORAGE.transactions);
-}
-
-document.addEventListener("DOMContentLoaded", init);
-
-function init() {
-  migrateLegacyData();
-  setupNavigation();
-  setupPaymentMethods();
-  setDefaultDates();
-  bindEvents();
-  toggleAccountFields();
-  applyPreset("dashboard");
-  applyPreset("report");
-  refreshAll();
-}
-
-function migrateLegacyData() {
-  if (!localStorage.getItem(STORAGE.accounts)) {
-    for (const key of LEGACY_KEYS.accounts) {
-      const data = readJson(key);
-      if (data.length) {
-        saveJson(STORAGE.accounts, data);
-        break;
-      }
+function accountComputed(id){
+  const a=db.accounts.find(x=>x.id===id); if(!a)return 0;
+  let v=Number(a.opening||0);
+  for(const t of db.transactions){
+    const amt=Number(t.amount||0);
+    if(a.type==="credit"){
+      if(t.type==="expense"&&t.accountId===id)v+=amt;
+      if(t.type==="transfer"&&t.toAccountId===id)v=Math.max(0,v-amt);
+      if(t.type==="transfer"&&t.fromAccountId===id)v+=amt;
+    }else{
+      if(t.type==="income"&&t.accountId===id)v+=amt;
+      if(t.type==="expense"&&t.accountId===id)v-=amt;
+      if(t.type==="transfer"&&t.fromAccountId===id)v-=amt;
+      if(t.type==="transfer"&&t.toAccountId===id)v+=amt;
     }
   }
-  if (!localStorage.getItem(STORAGE.transactions)) {
-    for (const key of LEGACY_KEYS.transactions) {
-      const data = readJson(key);
-      if (data.length) {
-        saveJson(STORAGE.transactions, data);
-        break;
-      }
-    }
+  return v;
+}
+function getAccountName(id){return db.accounts.find(a=>a.id===id)?.name||"Deleted Account"}
+function nonCreditAccounts(){return db.accounts.filter(a=>a.type!=="credit")}
+
+function renderAccountOptions(){
+  const all=db.accounts.map(a=>`<option value="${a.id}">${a.name}${a.type==="credit"?" (Credit Card)":""}</option>`).join("");
+  ["incomeAccount","expenseAccount","transferFrom","transferTo"].forEach(id=>$(id).innerHTML='<option value="">Select Account</option>'+all);
+}
+function renderAccounts(){
+  const box=$("accountsList");
+  if(!db.accounts.length){box.innerHTML='<div class="empty">No accounts added yet.</div>';return}
+  box.innerHTML=db.accounts.map(a=>{
+    const bal=accountComputed(a.id);
+    const label=a.type==="credit"?"Outstanding":"Current Balance";
+    return `<div class="account-card">
+      <div class="muted">${a.type==="credit"?"Credit Card":a.type[0].toUpperCase()+a.type.slice(1)}</div>
+      <h3>${escapeHtml(a.name)}</h3>
+      <div class="muted">${label}</div>
+      <div class="amount">${money(bal)}</div>
+      ${a.type==="credit"?`<div class="muted">Limit: ${money(a.limit||0)} · Available: ${money(Math.max(0,(a.limit||0)-bal))}</div>`:""}
+      <div class="account-actions">
+        <button class="icon-btn edit" onclick="editAccount('${a.id}')">Edit</button>
+        <button class="icon-btn delete" onclick="deleteAccount('${a.id}')">Delete</button>
+      </div></div>`
+  }).join("")
+}
+function escapeHtml(s=""){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+
+function saveAccount(e){
+  e.preventDefault();
+  const id=$("accountId").value;
+  const obj={id:id||uid(),name:$("accountName").value.trim(),type:$("accountType").value,opening:Number($("accountOpening").value||0),limit:Number($("accountLimit").value||0)};
+  if(!obj.name)return toast("Enter account name");
+  if(id){const i=db.accounts.findIndex(a=>a.id===id);db.accounts[i]=obj}else db.accounts.push(obj);
+  saveDB();resetAccountForm();refreshAll();toast(id?"Account updated":"Account added")
+}
+window.editAccount=id=>{
+  const a=db.accounts.find(x=>x.id===id);if(!a)return;
+  $("accountId").value=a.id;$("accountName").value=a.name;$("accountType").value=a.type;$("accountOpening").value=a.opening;$("accountLimit").value=a.limit||0;
+  $("limitWrap").classList.toggle("hidden",a.type!=="credit");showPage("accounts")
+}
+window.deleteAccount=id=>{
+  if(db.transactions.some(t=>t.accountId===id||t.fromAccountId===id||t.toAccountId===id))return alert("This account has transactions. Delete or edit those transactions first.");
+  if(confirm("Delete this account?")){db.accounts=db.accounts.filter(a=>a.id!==id);saveDB();refreshAll()}
+}
+function resetAccountForm(){$("accountForm").reset();$("accountId").value="";$("accountOpening").value=0;$("accountLimit").value=0;$("limitWrap").classList.add("hidden")}
+
+function transactionObject(type){
+  if(type==="income")return {id:$("incomeEditId").value||uid(),type,date:$("incomeDate").value,category:$("incomeCategory").value,party:$("incomeParty").value.trim(),accountId:$("incomeAccount").value,method:$("incomeMethod").value,amount:Number($("incomeAmount").value),notes:$("incomeNotes").value.trim()};
+  if(type==="expense")return {id:$("expenseEditId").value||uid(),type,date:$("expenseDate").value,category:$("expenseCategory").value,party:$("expenseParty").value.trim(),accountId:$("expenseAccount").value,method:$("expenseMethod").value,amount:Number($("expenseAmount").value),notes:$("expenseNotes").value.trim()};
+  return {id:$("transferEditId").value||uid(),type,date:$("transferDate").value,fromAccountId:$("transferFrom").value,toAccountId:$("transferTo").value,method:$("transferMethod").value,amount:Number($("transferAmount").value),notes:$("transferNotes").value.trim()};
+}
+function saveTransaction(type,e){
+  e.preventDefault(); const t=transactionObject(type);
+  if(!t.date||!t.amount||t.amount<=0)return toast("Enter valid date and amount");
+  if(type==="transfer"){
+    if(!t.fromAccountId||!t.toAccountId)return toast("Select both accounts");
+    if(t.fromAccountId===t.toAccountId)return toast("From and To accounts must be different");
+  }else if(!t.accountId)return toast("Select account");
+  const editId= type==="income"?$("incomeEditId").value:type==="expense"?$("expenseEditId").value:$("transferEditId").value;
+  if(editId){const i=db.transactions.findIndex(x=>x.id===editId);db.transactions[i]=t}else db.transactions.push(t);
+  saveDB();resetTransactionForm(type);refreshAll();toast(editId?"Transaction updated":"Transaction saved")
+}
+function resetTransactionForm(type){
+  const form=$(type+"Form"); form.reset(); $(type+"Date").value=today(); $(type+"EditId").value="";
+}
+window.editTransaction=id=>{
+  const t=db.transactions.find(x=>x.id===id); if(!t)return;
+  if(t.type==="income"){
+    $("incomeEditId").value=t.id;$("incomeDate").value=t.date;$("incomeCategory").value=t.category;$("incomeParty").value=t.party||"";$("incomeAccount").value=t.accountId;$("incomeMethod").value=t.method;$("incomeAmount").value=t.amount;$("incomeNotes").value=t.notes||"";
+  }else if(t.type==="expense"){
+    $("expenseEditId").value=t.id;$("expenseDate").value=t.date;$("expenseCategory").value=t.category;$("expenseParty").value=t.party||"";$("expenseAccount").value=t.accountId;$("expenseMethod").value=t.method;$("expenseAmount").value=t.amount;$("expenseNotes").value=t.notes||"";
+  }else{
+    $("transferEditId").value=t.id;$("transferDate").value=t.date;$("transferFrom").value=t.fromAccountId;$("transferTo").value=t.toAccountId;$("transferMethod").value=t.method;$("transferAmount").value=t.amount;$("transferNotes").value=t.notes||"";
   }
+  showPage(t.type); window.scrollTo({top:0,behavior:"smooth"})
+}
+window.deleteTransaction=id=>{if(confirm("Delete this transaction?")){db.transactions=db.transactions.filter(t=>t.id!==id);saveDB();refreshAll();toast("Transaction deleted")}}
+
+function filteredTransactions(){
+  const q=$("historySearch").value.toLowerCase().trim(), type=$("historyType").value, from=$("historyFrom").value, to=$("historyTo").value;
+  return [...db.transactions].filter(t=>{
+    if(type!=="all"&&t.type!==type)return false;
+    if(from&&parseDate(t.date)<parseDate(from))return false;if(to&&parseDate(t.date)>parseDate(to))return false;
+    const text=[t.type,t.category,t.party,t.notes,t.method,getAccountName(t.accountId),getAccountName(t.fromAccountId),getAccountName(t.toAccountId)].join(" ").toLowerCase();
+    return !q||text.includes(q)
+  }).sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id))
+}
+function renderHistory(){
+  const rows=filteredTransactions(); const body=$("historyBody");
+  if(!rows.length){body.innerHTML='<tr><td colspan="6" class="empty">No transactions found.</td></tr>';return}
+  body.innerHTML=rows.map(t=>{
+    const details=t.type==="transfer"?`${escapeHtml(getAccountName(t.fromAccountId))} → ${escapeHtml(getAccountName(t.toAccountId))}`:`${escapeHtml(t.category)}${t.party?` · ${escapeHtml(t.party)}`:""}`;
+    const account=t.type==="transfer"?escapeHtml(t.method):escapeHtml(getAccountName(t.accountId));
+    const sign=t.type==="income"?"+":t.type==="expense"?"-":"";
+    return `<tr><td>${fmtDate(t.date)}</td><td><span class="type-badge type-${t.type}">${t.type}</span></td><td>${details}</td><td>${account}</td><td class="amount-${t.type}">${sign}${money(t.amount)}</td><td><div class="row-actions"><button class="icon-btn edit" onclick="editTransaction('${t.id}')">Edit</button><button class="icon-btn delete" onclick="deleteTransaction('${t.id}')">Delete</button></div></td></tr>`
+  }).join("")
 }
 
-function setupNavigation() {
-  document.querySelectorAll(".nav-btn").forEach(button => {
-    button.addEventListener("click", () => {
-      document.querySelectorAll(".nav-btn").forEach(btn => btn.classList.remove("active"));
-      document.querySelectorAll(".page").forEach(page => page.classList.remove("active-page"));
-      button.classList.add("active");
-      $(button.dataset.page).classList.add("active-page");
-      refreshAll();
-    });
-  });
+function rangeStats(range){
+  const tx=db.transactions.filter(t=>inRange(t.date,range));
+  const income=tx.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+  const expense=tx.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
+  const expCat={};tx.filter(t=>t.type==="expense").forEach(t=>expCat[t.category]=(expCat[t.category]||0)+t.amount);
+  const incCat={};tx.filter(t=>t.type==="income").forEach(t=>incCat[t.category]=(incCat[t.category]||0)+t.amount);
+  const highest=Object.entries(expCat).sort((a,b)=>b[1]-a[1])[0]||["—",0];
+  return {income,expense,net:income-expense,savings:income?((income-expense)/income*100):0,expCat,incCat,highest,tx}
+}
+function renderDashboard(){
+  const r=dashRange||monthRange(), s=rangeStats(r);
+  $("dashIncome").textContent=money(s.income);$("dashExpense").textContent=money(s.expense);$("dashBalance").textContent=money(s.net);$("dashSavings").textContent=`${s.savings.toFixed(1)}%`;
+  $("dashHighest").textContent=money(s.highest[1]);$("dashHighestCat").textContent=s.highest[0];
+  $("dashCards").textContent=money(db.accounts.filter(a=>a.type==="credit").reduce((sum,a)=>sum+accountComputed(a.id),0));
+  $("periodLabel").textContent=`${fmtDate(r.from)} to ${fmtDate(r.to)}`;
+  $("dashAccounts").innerHTML=db.accounts.length?db.accounts.map(a=>`<div class="list-row"><span>${escapeHtml(a.name)}</span><strong>${money(accountComputed(a.id))}</strong></div>`).join(""):'<div class="empty">No accounts added.</div>';
+  const recent=[...db.transactions].sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).slice(0,5);
+  $("recentTransactions").innerHTML=recent.length?recent.map(t=>`<div class="list-row"><span>${fmtDate(t.date)} · ${t.type==="transfer"?"Transfer":escapeHtml(t.category)}</span><strong class="amount-${t.type}">${money(t.amount)}</strong></div>`).join(""):'<div class="empty">No transactions yet.</div>';
+}
+function barsHtml(obj){
+  const entries=Object.entries(obj).sort((a,b)=>b[1]-a[1]), max=entries[0]?.[1]||1;
+  if(!entries.length)return '<div class="empty">No data for selected period.</div>';
+  return entries.map(([k,v])=>`<div class="bar-row"><span>${escapeHtml(k)}</span><div class="bar-track"><div class="bar-fill" style="width:${(v/max)*100}%"></div></div><strong>${money(v)}</strong></div>`).join("")
+}
+function renderReports(){
+  const r=reportRange||monthRange(),s=rangeStats(r);
+  $("reportIncome").textContent=money(s.income);$("reportExpense").textContent=money(s.expense);$("reportNet").textContent=money(s.net);
+  $("expenseReport").innerHTML=barsHtml(s.expCat);$("incomeReport").innerHTML=barsHtml(s.incCat)
+}
+function refreshAll(){renderAccountOptions();renderAccounts();renderHistory();renderDashboard();renderReports()}
+
+function showPage(id){
+  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===id));
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.toggle("active",b.dataset.page===id));
+  $("nav").classList.remove("open")
 }
 
-function setupPaymentMethods() {
-  ["incomeMethod", "expenseMethod"].forEach(id => {
-    $(id).innerHTML = "";
-    PAYMENT_METHODS.forEach(method => $(id).add(new Option(method, method)));
-  });
+function downloadBackup(){
+  const blob=new Blob([JSON.stringify({version:"3.1",exportedAt:new Date().toISOString(),data:db},null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`My-Finance-Backup-${today()}.json`;a.click();URL.revokeObjectURL(a.href)
+}
+function restoreBackup(){
+  const f=$("restoreFile").files[0];if(!f)return toast("Choose a backup file");
+  const reader=new FileReader();reader.onload=()=>{
+    try{
+      const parsed=JSON.parse(reader.result), data=parsed.data||parsed;
+      if(!Array.isArray(data.accounts)||!Array.isArray(data.transactions))throw new Error();
+      if(confirm("Replace current data with this backup?")){db=data;saveDB();refreshAll();toast("Backup restored")}
+    }catch{alert("Invalid backup file")}
+  };reader.readAsText(f)
 }
 
-function setDefaultDates() {
-  ["incomeDate", "expenseDate", "transferDate"].forEach(id => $(id).value = todayText());
-}
-
-function bindEvents() {
-  $("accountType").addEventListener("change", toggleAccountFields);
-  $("saveAccount").addEventListener("click", saveAccount);
-  $("cancelAccountEdit").addEventListener("click", clearAccountForm);
-  $("accountFilter").addEventListener("change", renderAccounts);
-
-  $("saveIncome").addEventListener("click", saveIncome);
-  $("cancelIncomeEdit").addEventListener("click", clearIncomeForm);
-
-  $("saveExpense").addEventListener("click", saveExpense);
-  $("cancelExpenseEdit").addEventListener("click", clearExpenseForm);
-
-  $("saveTransfer").addEventListener("click", saveTransfer);
-  $("cancelTransferEdit").addEventListener("click", clearTransferForm);
-
-  ["historySearch", "historyType", "historyFrom", "historyTo", "historyAccount"]
-    .forEach(id => $(id).addEventListener("input", renderHistory));
-  $("clearHistoryFilters").addEventListener("click", clearHistoryFilters);
-
-  $("dashboardPreset").addEventListener("change", () => applyPreset("dashboard"));
-  $("showDashboard").addEventListener("click", renderDashboard);
-
-  $("reportPreset").addEventListener("change", () => applyPreset("report"));
-  $("generateReport").addEventListener("click", renderReports);
-
-  $("downloadBackup").addEventListener("click", downloadBackup);
-  $("restoreBackup").addEventListener("click", restoreBackup);
-  $("clearAllData").addEventListener("click", clearAllData);
-}
-
-function refreshAll() {
-  populateAccountSelects();
-  populatePeople();
-  renderAccounts();
-  renderHistory();
-  renderDashboard();
-  renderReports();
-}
-
-function populateAccountSelects() {
-  const activeAccounts = getAccounts().filter(account => account.active);
-  ["incomeAccount", "expenseAccount", "transferFrom", "transferTo"].forEach(id => {
-    const current = $(id).value;
-    $(id).innerHTML = '<option value="">Select Account</option>';
-    activeAccounts.forEach(account => {
-      $(id).add(new Option(`${account.name} (${account.type})`, account.id));
-    });
-    if ([...$(id).options].some(option => option.value === current)) {
-      $(id).value = current;
-    }
-  });
-
-  const history = $("historyAccount");
-  const currentHistory = history.value;
-  history.innerHTML = '<option value="All">All Accounts</option>';
-  getAccounts().forEach(account => history.add(new Option(account.name, account.id)));
-  if ([...history.options].some(option => option.value === currentHistory)) {
-    history.value = currentHistory;
-  }
-}
-
-function populatePeople() {
-  const names = [...new Set(getTransactions().map(tx => tx.party).filter(Boolean))].sort();
-  $("peopleList").innerHTML = names.map(name => `<option value="${escapeHtml(name)}">`).join("");
-}
-
-function toggleAccountFields() {
-  const isCreditCard = $("accountType").value === "Credit Card";
-  document.querySelectorAll(".credit-account").forEach(el => el.classList.toggle("hidden", !isCreditCard));
-  document.querySelectorAll(".normal-account").forEach(el => el.classList.toggle("hidden", isCreditCard));
-}
-
-function saveAccount() {
-  const editId = $("accountEditId").value;
-  const name = $("accountName").value.trim();
-  const type = $("accountType").value;
-
-  if (!name) {
-    alert("Account name enter చేయండి.");
-    return;
-  }
-
-  let list = getAccounts();
-  const old = list.find(account => account.id === editId);
-
-  const account = {
-    id: editId || uid(),
-    name,
-    type,
-    openingBalance: type === "Credit Card" ? 0 : numberValue("openingBalance"),
-    creditLimit: type === "Credit Card" ? numberValue("creditLimit") : 0,
-    openingOutstanding: type === "Credit Card" ? numberValue("openingOutstanding") : 0,
-    billDate: type === "Credit Card" ? numberValue("billDate") : 0,
-    dueDate: type === "Credit Card" ? numberValue("dueDate") : 0,
-    notes: $("accountNotes").value.trim(),
-    active: old ? old.active : true
-  };
-
-  if (editId) {
-    list = list.map(item => item.id === editId ? account : item);
-  } else {
-    list.push(account);
-  }
-
-  saveJson(STORAGE.accounts, list);
-  clearAccountForm();
-  refreshAll();
-  alert(editId ? "Account updated." : "Account saved.");
-}
-
-function clearAccountForm() {
-  ["accountEditId","accountName","openingBalance","creditLimit","openingOutstanding","billDate","dueDate","accountNotes"]
-    .forEach(id => $(id).value = "");
-  $("accountType").value = "Bank";
-  $("accountFormTitle").textContent = "Add Account";
-  $("saveAccount").textContent = "Save Account";
-  $("cancelAccountEdit").classList.add("hidden");
-  toggleAccountFields();
-}
-
-function accountBalance(accountId) {
-  const account = getAccounts().find(item => item.id === accountId);
-  if (!account) return 0;
-
-  let balance = account.type === "Credit Card"
-    ? Number(account.openingOutstanding || 0)
-    : Number(account.openingBalance || 0);
-
-  getTransactions().forEach(tx => {
-    const amount = Number(tx.amount || 0);
-
-    if (tx.type === "Income" && tx.accountId === accountId && account.type !== "Credit Card") {
-      balance += amount;
-    }
-
-    if (tx.type === "Expense" && tx.accountId === accountId) {
-      balance += account.type === "Credit Card" ? amount : -amount;
-    }
-
-    if (tx.type === "Transfer") {
-      if (tx.fromAccountId === accountId) {
-        balance += account.type === "Credit Card" ? amount : -amount;
-      }
-      if (tx.toAccountId === accountId) {
-        balance += account.type === "Credit Card" ? -amount : amount;
-      }
-    }
-  });
-
-  return balance;
-}
-
-function renderAccounts() {
-  const filter = $("accountFilter").value;
-  const list = getAccounts().filter(account =>
-    filter === "All" ||
-    filter === account.type ||
-    (filter === "Active" && account.active) ||
-    (filter === "Inactive" && !account.active)
-  );
-
-  if (!list.length) {
-    $("accountsList").innerHTML = '<div class="empty">No accounts found.</div>';
-    return;
-  }
-
-  $("accountsList").innerHTML = `<div class="account-grid">${list.map(account => {
-    const balance = accountBalance(account.id);
-    const details = account.type === "Credit Card"
-      ? `<div class="detail"><span>Outstanding</span><b>${money(balance)}</b></div>
-         <div class="detail"><span>Available Limit</span><b>${money(Math.max(0, Number(account.creditLimit || 0) - balance))}</b></div>
-         <div class="detail"><span>Bill / Due</span><b>${account.billDate || "-"} / ${account.dueDate || "-"}</b></div>`
-      : `<div class="detail"><span>Current Balance</span><b>${money(balance)}</b></div>`;
-
-    return `<article class="account-card ${account.active ? "" : "inactive"}">
-      <div class="row-between">
-        <div><b>${escapeHtml(account.name)}</b><div class="muted">${account.type}</div></div>
-        <span class="badge">${account.active ? "Active" : "Inactive"}</span>
-      </div>
-      <div class="detail-list">${details}${account.notes ? `<div class="muted">${escapeHtml(account.notes)}</div>` : ""}</div>
-      <div class="card-actions">
-        <button class="mini-btn edit-btn" onclick="editAccount('${account.id}')">Edit</button>
-        <button class="mini-btn toggle-btn" onclick="toggleAccount('${account.id}')">${account.active ? "Deactivate" : "Activate"}</button>
-        <button class="mini-btn delete-btn" onclick="deleteAccount('${account.id}')">Delete</button>
-      </div>
-    </article>`;
-  }).join("")}</div>`;
-}
-
-function editAccount(id) {
-  const account = getAccounts().find(item => item.id === id);
-  if (!account) return;
-
-  $("accountEditId").value = account.id;
-  $("accountName").value = account.name;
-  $("accountType").value = account.type;
-  $("openingBalance").value = account.openingBalance || "";
-  $("creditLimit").value = account.creditLimit || "";
-  $("openingOutstanding").value = account.openingOutstanding || "";
-  $("billDate").value = account.billDate || "";
-  $("dueDate").value = account.dueDate || "";
-  $("accountNotes").value = account.notes || "";
-  $("accountFormTitle").textContent = "Edit Account";
-  $("saveAccount").textContent = "Update Account";
-  $("cancelAccountEdit").classList.remove("hidden");
-  toggleAccountFields();
-  window.scrollTo({top: 0, behavior: "smooth"});
-}
-
-function toggleAccount(id) {
-  const list = getAccounts();
-  const account = list.find(item => item.id === id);
-  if (!account) return;
-  account.active = !account.active;
-  saveJson(STORAGE.accounts, list);
-  refreshAll();
-}
-
-function deleteAccount(id) {
-  const used = getTransactions().some(tx =>
-    tx.accountId === id || tx.fromAccountId === id || tx.toAccountId === id
-  );
-  if (used) {
-    alert("This account has transactions. Delete transactions first or deactivate the account.");
-    return;
-  }
-
-  const account = getAccounts().find(item => item.id === id);
-  if (account && confirm(`${account.name} delete చేయాలా?`)) {
-    saveJson(STORAGE.accounts, getAccounts().filter(item => item.id !== id));
-    refreshAll();
-  }
-}
-
-function saveIncome() {
-  const editId = $("incomeEditId").value;
-  const accountId = $("incomeAccount").value;
-  const amount = numberValue("incomeAmount");
-
-  if (!$("incomeDate").value || !accountId || amount <= 0) {
-    alert("Date, account select చేసి valid amount enter చేయండి.");
-    return;
-  }
-
-  upsertTransaction({
-    id: editId || uid(),
-    type: "Income",
-    date: $("incomeDate").value,
-    category: $("incomeCategory").value,
-    party: $("receivedFrom").value.trim(),
-    accountId,
-    method: $("incomeMethod").value,
-    amount,
-    notes: $("incomeNotes").value.trim()
-  });
-
-  clearIncomeForm();
-  refreshAll();
-  alert(editId ? "Income updated." : "Income saved.");
-}
-
-function saveExpense() {
-  const editId = $("expenseEditId").value;
-  const accountId = $("expenseAccount").value;
-  const amount = numberValue("expenseAmount");
-
-  if (!$("expenseDate").value || !accountId || amount <= 0) {
-    alert("Date, account select చేసి valid amount enter చేయండి.");
-    return;
-  }
-
-  upsertTransaction({
-    id: editId || uid(),
-    type: "Expense",
-    date: $("expenseDate").value,
-    category: $("expenseCategory").value,
-    party: $("paidTo").value.trim(),
-    accountId,
-    method: $("expenseMethod").value,
-    amount,
-    notes: $("expenseNotes").value.trim()
-  });
-
-  clearExpenseForm();
-  refreshAll();
-  alert(editId ? "Expense updated." : "Expense saved.");
-}
-
-function saveTransfer() {
-  const editId = $("transferEditId").value;
-  const fromAccountId = $("transferFrom").value;
-  const toAccountId = $("transferTo").value;
-  const amount = numberValue("transferAmount");
-
-  if (!$("transferDate").value || !fromAccountId || !toAccountId || amount <= 0) {
-    alert("Date, From, To accounts select చేసి valid amount enter చేయండి.");
-    return;
-  }
-  if (fromAccountId === toAccountId) {
-    alert("From and To accounts same ఉండకూడదు.");
-    return;
-  }
-
-  upsertTransaction({
-    id: editId || uid(),
-    type: "Transfer",
-    date: $("transferDate").value,
-    fromAccountId,
-    toAccountId,
-    amount,
-    notes: $("transferNotes").value.trim()
-  });
-
-  clearTransferForm();
-  refreshAll();
-  alert(editId ? "Transfer updated." : "Transfer saved.");
-}
-
-function upsertTransaction(transaction) {
-  const list = getTransactions();
-  const index = list.findIndex(item => item.id === transaction.id);
-  if (index >= 0) list[index] = transaction;
-  else list.push(transaction);
-  saveJson(STORAGE.transactions, list);
-}
-
-function clearIncomeForm() {
-  ["incomeEditId","receivedFrom","incomeAmount","incomeNotes"].forEach(id => $(id).value = "");
-  $("incomeDate").value = todayText();
-  $("incomeCategory").value = "Salary";
-  $("incomeAccount").value = "";
-  $("saveIncome").textContent = "Save Income";
-  $("cancelIncomeEdit").classList.add("hidden");
-}
-
-function clearExpenseForm() {
-  ["expenseEditId","paidTo","expenseAmount","expenseNotes"].forEach(id => $(id).value = "");
-  $("expenseDate").value = todayText();
-  $("expenseCategory").value = "Groceries";
-  $("expenseAccount").value = "";
-  $("saveExpense").textContent = "Save Expense";
-  $("cancelExpenseEdit").classList.add("hidden");
-}
-
-function clearTransferForm() {
-  ["transferEditId","transferAmount","transferNotes"].forEach(id => $(id).value = "");
-  $("transferDate").value = todayText();
-  $("transferFrom").value = "";
-  $("transferTo").value = "";
-  $("saveTransfer").textContent = "Save Transfer";
-  $("cancelTransferEdit").classList.add("hidden");
-}
-
-function accountName(id) {
-  return getAccounts().find(account => account.id === id)?.name || "Unknown Account";
-}
-
-function clearHistoryFilters() {
-  $("historySearch").value = "";
-  $("historyType").value = "All";
-  $("historyFrom").value = "";
-  $("historyTo").value = "";
-  $("historyAccount").value = "All";
-  renderHistory();
-}
-
-function renderHistory() {
-  const search = $("historySearch").value.toLowerCase();
-  const type = $("historyType").value;
-  const from = $("historyFrom").value;
-  const to = $("historyTo").value;
-  const account = $("historyAccount").value;
-
-  let list = [...getTransactions()].sort((a, b) =>
-    b.date.localeCompare(a.date) || b.id.localeCompare(a.id)
-  );
-
-  list = list.filter(tx => {
-    const searchable = [
-      tx.category, tx.party, tx.notes,
-      accountName(tx.accountId), accountName(tx.fromAccountId), accountName(tx.toAccountId)
-    ].join(" ").toLowerCase();
-
-    const accountMatches = account === "All" ||
-      tx.accountId === account ||
-      tx.fromAccountId === account ||
-      tx.toAccountId === account;
-
-    const dateMatches = (!from || tx.date >= from) && (!to || tx.date <= to);
-
-    return (!search || searchable.includes(search)) &&
-      (type === "All" || tx.type === type) &&
-      accountMatches &&
-      dateMatches;
-  });
-
-  $("transactionList").innerHTML = list.length
-    ? list.map(transactionHtml).join("")
-    : '<div class="empty">No transactions found.</div>';
-}
-
-function transactionHtml(tx) {
-  let title = "";
-  let sub = "";
-
-  if (tx.type === "Income") {
-    title = `${escapeHtml(tx.category)}${tx.party ? ` • ${escapeHtml(tx.party)}` : ""}`;
-    sub = `Received in ${escapeHtml(accountName(tx.accountId))} • ${escapeHtml(tx.method || "")}`;
-  } else if (tx.type === "Expense") {
-    title = `${escapeHtml(tx.category)}${tx.party ? ` • ${escapeHtml(tx.party)}` : ""}`;
-    sub = `Paid from ${escapeHtml(accountName(tx.accountId))} • ${escapeHtml(tx.method || "")}`;
-  } else {
-    title = `${escapeHtml(accountName(tx.fromAccountId))} → ${escapeHtml(accountName(tx.toAccountId))}`;
-    sub = escapeHtml(tx.notes || "Account transfer");
-  }
-
-  const sign = tx.type === "Expense" ? "-" : tx.type === "Income" ? "+" : "";
-
-  return `<div class="transaction">
-    <div>${formatDate(tx.date)}</div>
-    <span class="type-badge type-${tx.type}">${tx.type}</span>
-    <div><div class="tx-title">${title}</div><div class="tx-sub">${sub}</div></div>
-    <b class="tx-amount amount-${tx.type}">${sign}${money(tx.amount)}</b>
-    <div class="tx-actions">
-      <button class="mini-btn edit-btn" onclick="editTransaction('${tx.id}')">Edit</button>
-      <button class="mini-btn delete-btn" onclick="deleteTransaction('${tx.id}')">Delete</button>
-    </div>
-  </div>`;
-}
-
-function formatDate(dateString) {
-  if (!dateString) return "";
-  const [year, month, day] = dateString.split("-");
-  return `${day}-${month}-${year}`;
-}
-
-function editTransaction(id) {
-  const tx = getTransactions().find(item => item.id === id);
-  if (!tx) return;
-
-  document.querySelector(`[data-page="${tx.type.toLowerCase()}"]`).click();
-
-  if (tx.type === "Income") {
-    $("incomeEditId").value = tx.id;
-    $("incomeDate").value = tx.date;
-    $("incomeCategory").value = tx.category;
-    $("receivedFrom").value = tx.party || "";
-    $("incomeAccount").value = tx.accountId;
-    $("incomeMethod").value = tx.method;
-    $("incomeAmount").value = tx.amount;
-    $("incomeNotes").value = tx.notes || "";
-    $("saveIncome").textContent = "Update Income";
-    $("cancelIncomeEdit").classList.remove("hidden");
-  } else if (tx.type === "Expense") {
-    $("expenseEditId").value = tx.id;
-    $("expenseDate").value = tx.date;
-    $("expenseCategory").value = tx.category;
-    $("paidTo").value = tx.party || "";
-    $("expenseAccount").value = tx.accountId;
-    $("expenseMethod").value = tx.method;
-    $("expenseAmount").value = tx.amount;
-    $("expenseNotes").value = tx.notes || "";
-    $("saveExpense").textContent = "Update Expense";
-    $("cancelExpenseEdit").classList.remove("hidden");
-  } else {
-    $("transferEditId").value = tx.id;
-    $("transferDate").value = tx.date;
-    $("transferFrom").value = tx.fromAccountId;
-    $("transferTo").value = tx.toAccountId;
-    $("transferAmount").value = tx.amount;
-    $("transferNotes").value = tx.notes || "";
-    $("saveTransfer").textContent = "Update Transfer";
-    $("cancelTransferEdit").classList.remove("hidden");
-  }
-}
-
-function deleteTransaction(id) {
-  if (confirm("ఈ transaction delete చేయాలా?")) {
-    saveJson(STORAGE.transactions, getTransactions().filter(item => item.id !== id));
-    refreshAll();
-  }
-}
-
-function dateText(date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function presetDates(preset) {
-  const now = new Date();
-  let from = new Date(now);
-  let to = new Date(now);
-
-  if (preset === "yesterday") {
-    from.setDate(from.getDate() - 1);
-    to = new Date(from);
-  } else if (preset === "thisWeek") {
-    const mondayOffset = (now.getDay() + 6) % 7;
-    from.setDate(now.getDate() - mondayOffset);
-  } else if (preset === "lastMonth") {
-    from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    to = new Date(now.getFullYear(), now.getMonth(), 0);
-  } else if (preset === "thisYear") {
-    from = new Date(now.getFullYear(), 0, 1);
-    to = new Date(now.getFullYear(), 11, 31);
-  } else if (preset === "thisMonth") {
-    from = new Date(now.getFullYear(), now.getMonth(), 1);
-    to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  }
-
-  return {from: dateText(from), to: dateText(to)};
-}
-
-function applyPreset(prefix) {
-  const preset = $(`${prefix}Preset`).value;
-  if (preset !== "custom") {
-    const range = presetDates(preset);
-    $(`${prefix}From`).value = range.from;
-    $(`${prefix}To`).value = range.to;
-  }
-
-  if (prefix === "dashboard") renderDashboard();
-  else renderReports();
-}
-
-function shortPeriodLabel(from, to) {
-  if (!from && !to) return "All Dates";
-  if (from && to && from.slice(0, 7) === to.slice(0, 7)) {
-    const first = new Date(from + "T00:00:00");
-    const last = new Date(to + "T00:00:00");
-    if (first.getDate() === 1 && last.getDate() === new Date(last.getFullYear(), last.getMonth() + 1, 0).getDate()) {
-      return first.toLocaleString("en-IN", {month: "short", year: "2-digit"}).replace(" ", "-");
-    }
-  }
-  const nice = date => new Date(date + "T00:00:00").toLocaleDateString("en-IN", {day:"2-digit", month:"short", year:"2-digit"});
-  return `${from ? nice(from) : "Start"} to ${to ? nice(to) : "Today"}`;
-}
-
-function filteredTransactions(from, to) {
-  return getTransactions().filter(tx => (!from || tx.date >= from) && (!to || tx.date <= to));
-}
-
-function categorySummaryHtml(categories) {
-  const entries = Object.entries(categories).sort((a, b) => b[1] - a[1]);
-  if (!entries.length) return '<div class="empty">No expenses for selected dates.</div>';
-
-  const max = Math.max(...entries.map(([, value]) => value), 1);
-  return entries.map(([category, value]) =>
-    `<div class="category-row">
-      <span>${escapeHtml(category)}</span>
-      <div class="bar"><span style="width:${(value / max) * 100}%"></span></div>
-      <b>${money(value)}</b>
-    </div>`
-  ).join("");
-}
-
-function renderDashboard() {
-  const from = $("dashboardFrom").value;
-  const to = $("dashboardTo").value;
-  const list = filteredTransactions(from, to);
-
-  const income = list.filter(tx => tx.type === "Income").reduce((sum, tx) => sum + Number(tx.amount), 0);
-  const expense = list.filter(tx => tx.type === "Expense").reduce((sum, tx) => sum + Number(tx.amount), 0);
-  const savings = income - expense;
-  const highest = list.filter(tx => tx.type === "Expense").sort((a, b) => Number(b.amount) - Number(a.amount))[0];
-
-  $("dashboardPeriodLabel").textContent = shortPeriodLabel(from, to);
-  $("dashIncome").textContent = money(income);
-  $("dashExpense").textContent = money(expense);
-  $("dashSavings").textContent = money(savings);
-  $("dashSavingsPercent").textContent = income > 0 ? `${((savings / income) * 100).toFixed(1)}%` : "0%";
-  $("dashHighestExpense").textContent = highest ? money(highest.amount) : money(0);
-  $("dashHighestCategory").textContent = highest ? highest.category : "No expense";
-
-  const accounts = getAccounts();
-  $("dashLiquidBalance").textContent = money(
-    accounts.filter(account => account.type !== "Credit Card")
-      .reduce((sum, account) => sum + accountBalance(account.id), 0)
-  );
-  $("dashCardOutstanding").textContent = money(
-    accounts.filter(account => account.type === "Credit Card")
-      .reduce((sum, account) => sum + accountBalance(account.id), 0)
-  );
-  $("dashAccountCount").textContent = accounts.length;
-
-  const recent = [...getTransactions()]
-    .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))
-    .slice(0, 5);
-
-  $("recentTransactions").innerHTML = recent.length
-    ? recent.map(tx => `<div class="detail"><span>${tx.type} • ${formatDate(tx.date)}</span><b class="amount-${tx.type}">${money(tx.amount)}</b></div>`).join("")
-    : '<div class="empty">No transactions yet.</div>';
-
-  const categories = {};
-  list.filter(tx => tx.type === "Expense").forEach(tx => {
-    categories[tx.category] = (categories[tx.category] || 0) + Number(tx.amount);
-  });
-  $("dashboardCategorySummary").innerHTML = categorySummaryHtml(categories);
-}
-
-function renderReports() {
-  const from = $("reportFrom").value;
-  const to = $("reportTo").value;
-  const list = filteredTransactions(from, to);
-
-  const income = list.filter(tx => tx.type === "Income").reduce((sum, tx) => sum + Number(tx.amount), 0);
-  const expense = list.filter(tx => tx.type === "Expense").reduce((sum, tx) => sum + Number(tx.amount), 0);
-  const savings = income - expense;
-
-  $("reportPeriodLabel").textContent = shortPeriodLabel(from, to);
-  $("reportIncome").textContent = money(income);
-  $("reportExpense").textContent = money(expense);
-  $("reportSavings").textContent = money(savings);
-  $("reportSavingsPercent").textContent = income > 0 ? `${((savings / income) * 100).toFixed(1)}%` : "0%";
-
-  const categories = {};
-  list.filter(tx => tx.type === "Expense").forEach(tx => {
-    categories[tx.category] = (categories[tx.category] || 0) + Number(tx.amount);
-  });
-  $("reportCategorySummary").innerHTML = categorySummaryHtml(categories);
-
-  const accounts = getAccounts();
-  $("reportAccountBalances").innerHTML = accounts.length
-    ? accounts.map(account =>
-      `<div class="account-report-row">
-        <span>${escapeHtml(account.name)} <small class="muted">(${account.type})</small></span>
-        <b>${money(accountBalance(account.id))}</b>
-      </div>`
-    ).join("")
-    : '<div class="empty">No accounts found.</div>';
-
-  const monthly = {};
-  list.forEach(tx => {
-    const month = tx.date.slice(0, 7);
-    if (!monthly[month]) monthly[month] = {income: 0, expense: 0};
-    if (tx.type === "Income") monthly[month].income += Number(tx.amount);
-    if (tx.type === "Expense") monthly[month].expense += Number(tx.amount);
-  });
-
-  const entries = Object.entries(monthly).sort((a, b) => a[0].localeCompare(b[0]));
-  const max = Math.max(1, ...entries.flatMap(([, values]) => [values.income, values.expense]));
-
-  $("monthlyTrend").innerHTML = entries.length
-    ? entries.map(([month, values]) => {
-      const label = new Date(month + "-01T00:00:00").toLocaleString("en-IN", {month: "short", year: "2-digit"}).replace(" ", "-");
-      return `<div class="trend-row">
-        <b>${label}</b>
-        <div class="trend-bars">
-          <div class="trend-bar trend-income"><span style="width:${(values.income / max) * 100}%"></span></div>
-          <div class="trend-bar trend-expense"><span style="width:${(values.expense / max) * 100}%"></span></div>
-        </div>
-        <span class="trend-income-value">Income ${money(values.income)}</span>
-        <span class="trend-expense-value">Expense ${money(values.expense)}</span>
-      </div>`;
-    }).join("")
-    : '<div class="empty">No report data for selected dates.</div>';
-}
-
-function downloadBackup() {
-  const backup = {
-    app: "My Finance",
-    version: "3.0",
-    exportedAt: new Date().toISOString(),
-    accounts: getAccounts(),
-    transactions: getTransactions()
-  };
-
-  const blob = new Blob([JSON.stringify(backup, null, 2)], {type: "application/json"});
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `my-finance-backup-${todayText()}.json`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-}
-
-function restoreBackup() {
-  const file = $("restoreFile").files[0];
-  if (!file) {
-    alert("Backup file select చేయండి.");
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      const backup = JSON.parse(reader.result);
-      if (!Array.isArray(backup.accounts) || !Array.isArray(backup.transactions)) {
-        throw new Error("Invalid backup");
-      }
-      if (!confirm("Existing data replace చేసి backup restore చేయాలా?")) return;
-
-      saveJson(STORAGE.accounts, backup.accounts);
-      saveJson(STORAGE.transactions, backup.transactions);
-      $("restoreFile").value = "";
-      refreshAll();
-      alert("Backup restored successfully.");
-    } catch {
-      alert("Invalid backup file.");
-    }
-  };
-  reader.readAsText(file);
-}
-
-function clearAllData() {
-  if (!confirm("Accounts and transactions అన్నీ permanently delete చేయాలా?")) return;
-  if (!confirm("Final confirmation: ఈ action undo చేయలేరు.")) return;
-
-  localStorage.removeItem(STORAGE.accounts);
-  localStorage.removeItem(STORAGE.transactions);
-  refreshAll();
-  alert("All data deleted.");
-}
+document.addEventListener("DOMContentLoaded",()=>{
+  loadDB();
+  fillSelect("incomeCategory",incomeCategories);fillSelect("expenseCategory",expenseCategories);
+  ["incomeMethod","expenseMethod","transferMethod"].forEach(id=>fillSelect(id,paymentMethods));
+  ["incomeDate","expenseDate","transferDate"].forEach(id=>$(id).value=today());
+  const mr=monthRange();["dashFrom","reportFrom"].forEach(id=>$(id).value=mr.from);["dashTo","reportTo"].forEach(id=>$(id).value=mr.to);
+
+  document.querySelectorAll(".nav-btn").forEach(b=>b.onclick=()=>showPage(b.dataset.page));
+  $("menuBtn").onclick=()=>$("nav").classList.toggle("open");
+  $("accountType").onchange=()=>$("limitWrap").classList.toggle("hidden",$("accountType").value!=="credit");
+  $("accountForm").onsubmit=saveAccount;$("cancelAccountEdit").onclick=resetAccountForm;
+  $("incomeForm").onsubmit=e=>saveTransaction("income",e);$("expenseForm").onsubmit=e=>saveTransaction("expense",e);$("transferForm").onsubmit=e=>saveTransaction("transfer",e);
+  $("cancelIncomeEdit").onclick=()=>resetTransactionForm("income");$("cancelExpenseEdit").onclick=()=>resetTransactionForm("expense");$("cancelTransferEdit").onclick=()=>resetTransactionForm("transfer");
+  ["historySearch","historyType","historyFrom","historyTo"].forEach(id=>$(id).addEventListener("input",renderHistory));
+  $("clearHistoryFilters").onclick=()=>{$("historySearch").value="";$("historyType").value="all";$("historyFrom").value="";$("historyTo").value="";renderHistory()};
+  $("applyDashFilter").onclick=()=>{if(!$("dashFrom").value||!$("dashTo").value)return toast("Select both dates");dashRange={from:$("dashFrom").value,to:$("dashTo").value};renderDashboard()};
+  $("resetDashFilter").onclick=()=>{dashRange=monthRange();$("dashFrom").value=dashRange.from;$("dashTo").value=dashRange.to;renderDashboard()};
+  $("applyReport").onclick=()=>{if(!$("reportFrom").value||!$("reportTo").value)return toast("Select both dates");reportRange={from:$("reportFrom").value,to:$("reportTo").value};renderReports()};
+  $("resetReport").onclick=()=>{reportRange=monthRange();$("reportFrom").value=reportRange.from;$("reportTo").value=reportRange.to;renderReports()};
+  $("downloadBackup").onclick=downloadBackup;$("restoreBackup").onclick=restoreBackup;
+  $("resetAllData").onclick=()=>{if(confirm("Delete all accounts and transactions?")){db={accounts:[],transactions:[]};saveDB();refreshAll();toast("All data deleted")}};
+  refreshAll()
+});

@@ -1,285 +1,212 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Finance v3.0</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>My Finance v3.1</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app-shell">
-    <header class="app-header">
-      <div>
-        <h1>💰 My Finance</h1>
-        <p>Personal finance manager</p>
+  <header class="topbar">
+    <div>
+      <h1>My Finance</h1>
+      <p>Personal Finance Manager <span class="version">v3.1</span></p>
+    </div>
+    <button id="menuBtn" class="menu-btn" aria-label="Toggle menu">☰</button>
+  </header>
+
+  <nav id="nav" class="nav">
+    <button class="nav-btn active" data-page="dashboard">🏠 Dashboard</button>
+    <button class="nav-btn" data-page="accounts">🏦 Accounts</button>
+    <button class="nav-btn" data-page="income">💰 Income</button>
+    <button class="nav-btn" data-page="expense">💸 Expense</button>
+    <button class="nav-btn" data-page="transfer">🔁 Transfer</button>
+    <button class="nav-btn" data-page="history">📜 History</button>
+    <button class="nav-btn" data-page="reports">📊 Reports</button>
+    <button class="nav-btn" data-page="backup">💾 Backup</button>
+  </nav>
+
+  <main class="container">
+    <section id="dashboard" class="page active">
+      <div class="section-head">
+        <div>
+          <h2>Dashboard</h2>
+          <p class="muted" id="periodLabel">Current Month</p>
+        </div>
+        <div class="period-filter">
+          <label>From <input type="date" id="dashFrom" /></label>
+          <label>To <input type="date" id="dashTo" /></label>
+          <button class="btn small" id="applyDashFilter">Apply</button>
+          <button class="btn small secondary" id="resetDashFilter">This Month</button>
+        </div>
       </div>
-      <span class="version-badge">v3.0</span>
-    </header>
 
-    <nav class="main-nav">
-      <button class="nav-btn active" data-page="dashboard">🏠 Dashboard</button>
-      <button class="nav-btn" data-page="accounts">💼 Accounts</button>
-      <button class="nav-btn" data-page="income">💰 Income</button>
-      <button class="nav-btn" data-page="expense">💸 Expense</button>
-      <button class="nav-btn" data-page="transfer">🔄 Transfer</button>
-      <button class="nav-btn" data-page="history">📜 History</button>
-      <button class="nav-btn" data-page="reports">📊 Reports</button>
-      <button class="nav-btn" data-page="backup">⚙️ Backup</button>
-    </nav>
+      <div class="cards">
+        <article class="card positive"><span>Income</span><strong id="dashIncome">₹0</strong></article>
+        <article class="card negative"><span>Expenses</span><strong id="dashExpense">₹0</strong></article>
+        <article class="card neutral"><span>Balance</span><strong id="dashBalance">₹0</strong></article>
+        <article class="card"><span>Savings</span><strong id="dashSavings">0%</strong></article>
+        <article class="card"><span>Highest Expense</span><strong id="dashHighest">₹0</strong><small id="dashHighestCat">—</small></article>
+        <article class="card"><span>Card Outstanding</span><strong id="dashCards">₹0</strong></article>
+      </div>
 
-    <main>
-      <section id="dashboard" class="page active-page">
-        <div class="page-heading">
-          <div>
-            <h2>Dashboard</h2>
-            <p>Date-wise financial summary</p>
-          </div>
-        </div>
-
+      <div class="grid two">
         <div class="panel">
-          <div class="filter-row dashboard-filter">
-            <label>Period
-              <select id="dashboardPreset">
-                <option value="thisMonth">This Month</option>
-                <option value="today">Today</option>
-                <option value="yesterday">Yesterday</option>
-                <option value="thisWeek">This Week</option>
-                <option value="lastMonth">Last Month</option>
-                <option value="custom">Custom Range</option>
-              </select>
-            </label>
-            <label>From Date<input id="dashboardFrom" type="date"></label>
-            <label>To Date<input id="dashboardTo" type="date"></label>
-            <button id="showDashboard" class="btn primary">Show</button>
-          </div>
-          <div class="period-label">Selected Period: <strong id="dashboardPeriodLabel">-</strong></div>
+          <h3>Account Summary</h3>
+          <div id="dashAccounts" class="list"></div>
         </div>
-
-        <div class="summary-grid">
-          <article class="summary-card green"><span>Income</span><strong id="dashIncome">₹0</strong></article>
-          <article class="summary-card red"><span>Expense</span><strong id="dashExpense">₹0</strong></article>
-          <article class="summary-card blue"><span>Savings</span><strong id="dashSavings">₹0</strong></article>
-          <article class="summary-card cyan"><span>Savings %</span><strong id="dashSavingsPercent">0%</strong></article>
-          <article class="summary-card pink"><span>Highest Expense</span><strong id="dashHighestExpense">₹0</strong><small id="dashHighestCategory">No expense</small></article>
-          <article class="summary-card teal"><span>Bank / Cash Balance</span><strong id="dashLiquidBalance">₹0</strong></article>
-          <article class="summary-card orange"><span>Card Outstanding</span><strong id="dashCardOutstanding">₹0</strong></article>
-          <article class="summary-card purple"><span>Total Accounts</span><strong id="dashAccountCount">0</strong></article>
-        </div>
-
-        <div class="two-column">
-          <div class="panel">
-            <h3>Recent 5 Transactions</h3>
-            <div id="recentTransactions"></div>
-          </div>
-          <div class="panel">
-            <h3>Expense by Category</h3>
-            <div id="dashboardCategorySummary"></div>
-          </div>
-        </div>
-      </section>
-
-      <section id="accounts" class="page">
-        <div class="page-heading"><div><h2>Accounts</h2><p>Bank, credit card, cash and wallet accounts</p></div></div>
-
         <div class="panel">
-          <h3 id="accountFormTitle">Add Account</h3>
-          <input id="accountEditId" type="hidden">
-          <div class="form-grid">
-            <label>Account Name<input id="accountName" type="text" placeholder="Example: HDFC Bank"></label>
-            <label>Account Type
-              <select id="accountType">
-                <option value="Bank">Bank Account</option>
-                <option value="Credit Card">Credit Card</option>
-                <option value="Cash">Cash</option>
-                <option value="Wallet">Wallet</option>
-              </select>
-            </label>
-            <label class="normal-account">Opening Balance<input id="openingBalance" type="number" min="0" step="0.01" placeholder="0"></label>
-            <label class="credit-account hidden">Credit Limit<input id="creditLimit" type="number" min="0" step="0.01" placeholder="0"></label>
-            <label class="credit-account hidden">Opening Outstanding<input id="openingOutstanding" type="number" min="0" step="0.01" placeholder="0"></label>
-            <label class="credit-account hidden">Bill Date<input id="billDate" type="number" min="1" max="31" placeholder="10"></label>
-            <label class="credit-account hidden">Due Date<input id="dueDate" type="number" min="1" max="31" placeholder="17"></label>
-            <label class="full-width">Notes<textarea id="accountNotes" rows="2" placeholder="Optional"></textarea></label>
-          </div>
-          <div class="button-row">
-            <button id="saveAccount" class="btn primary">Save Account</button>
-            <button id="cancelAccountEdit" class="btn secondary hidden">Cancel</button>
-          </div>
+          <h3>Recent Transactions</h3>
+          <div id="recentTransactions" class="list"></div>
         </div>
+      </div>
+    </section>
 
+    <section id="accounts" class="page">
+      <div class="section-head"><div><h2>Accounts</h2><p class="muted">Add bank, cash, wallet or credit card accounts</p></div></div>
+      <form id="accountForm" class="panel form-grid">
+        <input type="hidden" id="accountId" />
+        <label>Account Name<input id="accountName" required placeholder="SBI Salary Account" /></label>
+        <label>Account Type
+          <select id="accountType" required>
+            <option value="bank">Bank Account</option>
+            <option value="cash">Cash</option>
+            <option value="wallet">Wallet</option>
+            <option value="credit">Credit Card</option>
+          </select>
+        </label>
+        <label>Opening Balance / Outstanding<input id="accountOpening" type="number" step="0.01" min="0" value="0" required /></label>
+        <label id="limitWrap" class="hidden">Credit Limit<input id="accountLimit" type="number" step="0.01" min="0" value="0" /></label>
+        <div class="form-actions">
+          <button class="btn" type="submit">Save Account</button>
+          <button class="btn secondary" type="button" id="cancelAccountEdit">Cancel</button>
+        </div>
+      </form>
+      <div id="accountsList" class="account-grid"></div>
+    </section>
+
+    <section id="income" class="page">
+      <h2>Add Income</h2>
+      <form id="incomeForm" class="panel form-grid">
+        <input type="hidden" id="incomeEditId" />
+        <label>Date<input id="incomeDate" type="date" required /></label>
+        <label>Category<select id="incomeCategory"></select></label>
+        <label>Received From<input id="incomeParty" placeholder="Company / Person" /></label>
+        <label>Deposit To<select id="incomeAccount" required></select></label>
+        <label>Payment Method<select id="incomeMethod"></select></label>
+        <label>Amount<input id="incomeAmount" type="number" step="0.01" min="0.01" required /></label>
+        <label class="full">Notes<textarea id="incomeNotes" rows="2"></textarea></label>
+        <div class="form-actions">
+          <button class="btn" type="submit">Save Income</button>
+          <button class="btn secondary" type="button" id="cancelIncomeEdit">Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="expense" class="page">
+      <h2>Add Expense</h2>
+      <form id="expenseForm" class="panel form-grid">
+        <input type="hidden" id="expenseEditId" />
+        <label>Date<input id="expenseDate" type="date" required /></label>
+        <label>Category<select id="expenseCategory"></select></label>
+        <label>Paid To<input id="expenseParty" placeholder="Shop / Person" /></label>
+        <label>Paid From<select id="expenseAccount" required></select></label>
+        <label>Payment Method<select id="expenseMethod"></select></label>
+        <label>Amount<input id="expenseAmount" type="number" step="0.01" min="0.01" required /></label>
+        <label class="full">Notes<textarea id="expenseNotes" rows="2"></textarea></label>
+        <div class="form-actions">
+          <button class="btn" type="submit">Save Expense</button>
+          <button class="btn secondary" type="button" id="cancelExpenseEdit">Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="transfer" class="page">
+      <h2>Transfer / Card Payment</h2>
+      <form id="transferForm" class="panel form-grid">
+        <input type="hidden" id="transferEditId" />
+        <label>Date<input id="transferDate" type="date" required /></label>
+        <label>From Account<select id="transferFrom" required></select></label>
+        <label>To Account<select id="transferTo" required></select></label>
+        <label>Amount<input id="transferAmount" type="number" step="0.01" min="0.01" required /></label>
+        <label>Payment Method<select id="transferMethod"></select></label>
+        <label class="full">Notes<textarea id="transferNotes" rows="2"></textarea></label>
+        <div class="form-actions">
+          <button class="btn" type="submit">Save Transfer</button>
+          <button class="btn secondary" type="button" id="cancelTransferEdit">Cancel</button>
+        </div>
+      </form>
+      <div class="info-box">Credit card payment: select Bank/Cash/Wallet in “From Account” and Credit Card in “To Account”.</div>
+    </section>
+
+    <section id="history" class="page">
+      <div class="section-head">
+        <div><h2>Transaction History</h2><p class="muted">Income, expenses and transfers in one place</p></div>
+      </div>
+      <div class="panel filters">
+        <input id="historySearch" placeholder="Search category, party, account..." />
+        <select id="historyType">
+          <option value="all">All Types</option>
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
+          <option value="transfer">Transfer</option>
+        </select>
+        <input id="historyFrom" type="date" />
+        <input id="historyTo" type="date" />
+        <button class="btn small" id="clearHistoryFilters">Clear</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Type</th><th>Details</th><th>Account</th><th>Amount</th><th>Actions</th></tr></thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="reports" class="page">
+      <h2>Reports</h2>
+      <div class="panel filters">
+        <input id="reportFrom" type="date" />
+        <input id="reportTo" type="date" />
+        <button class="btn small" id="applyReport">Apply</button>
+        <button class="btn small secondary" id="resetReport">This Month</button>
+      </div>
+      <div class="cards">
+        <article class="card positive"><span>Total Income</span><strong id="reportIncome">₹0</strong></article>
+        <article class="card negative"><span>Total Expense</span><strong id="reportExpense">₹0</strong></article>
+        <article class="card neutral"><span>Net Savings</span><strong id="reportNet">₹0</strong></article>
+      </div>
+      <div class="grid two">
+        <div class="panel"><h3>Expense by Category</h3><div id="expenseReport" class="bar-list"></div></div>
+        <div class="panel"><h3>Income by Category</h3><div id="incomeReport" class="bar-list"></div></div>
+      </div>
+    </section>
+
+    <section id="backup" class="page">
+      <h2>Backup & Restore</h2>
+      <div class="grid two">
         <div class="panel">
-          <div class="panel-toolbar">
-            <h3>Accounts List</h3>
-            <select id="accountFilter">
-              <option value="All">All Accounts</option>
-              <option value="Bank">Bank</option>
-              <option value="Credit Card">Credit Card</option>
-              <option value="Cash">Cash</option>
-              <option value="Wallet">Wallet</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-          </div>
-          <div id="accountsList"></div>
+          <h3>Download Backup</h3>
+          <p class="muted">Save all accounts and transactions as a JSON file.</p>
+          <button class="btn" id="downloadBackup">Download Backup</button>
         </div>
-      </section>
-
-      <section id="income" class="page">
-        <div class="page-heading"><div><h2>Add Income</h2><p>Record salary, refund, bonus or any money received</p></div></div>
         <div class="panel">
-          <input id="incomeEditId" type="hidden">
-          <div class="form-grid">
-            <label>Date<input id="incomeDate" type="date"></label>
-            <label>Category
-              <select id="incomeCategory">
-                <option>Salary</option><option>Bonus</option><option>Refund</option>
-                <option>Friend Returned</option><option>Loan Received</option>
-                <option>Interest</option><option>Gift</option><option>Rental Income</option><option>Other</option>
-              </select>
-            </label>
-            <label>Received From<input id="receivedFrom" type="text" list="peopleList" placeholder="Company or person"></label>
-            <label>Received In<select id="incomeAccount"></select></label>
-            <label>Payment Method<select id="incomeMethod"></select></label>
-            <label>Amount<input id="incomeAmount" type="number" min="0" step="0.01" placeholder="0"></label>
-            <label class="full-width">Notes<textarea id="incomeNotes" rows="2" placeholder="Optional"></textarea></label>
-          </div>
-          <div class="button-row">
-            <button id="saveIncome" class="btn primary">Save Income</button>
-            <button id="cancelIncomeEdit" class="btn secondary hidden">Cancel</button>
-          </div>
+          <h3>Restore Backup</h3>
+          <p class="muted">Choose a backup JSON file. Existing data will be replaced.</p>
+          <input type="file" id="restoreFile" accept=".json,application/json" />
+          <button class="btn" id="restoreBackup">Restore</button>
         </div>
-      </section>
+      </div>
+      <div class="panel danger-zone">
+        <h3>Reset All Data</h3>
+        <p class="muted">This action cannot be undone unless you have a backup.</p>
+        <button class="btn danger" id="resetAllData">Delete All Data</button>
+      </div>
+    </section>
+  </main>
 
-      <section id="expense" class="page">
-        <div class="page-heading"><div><h2>Add Expense</h2><p>Record daily and monthly spending</p></div></div>
-        <div class="panel">
-          <input id="expenseEditId" type="hidden">
-          <div class="form-grid">
-            <label>Date<input id="expenseDate" type="date"></label>
-            <label>Category
-              <select id="expenseCategory">
-                <option>Groceries</option><option>Petrol</option><option>EMI</option>
-                <option>Insurance</option><option>School Fees</option><option>Mobile / Internet</option>
-                <option>Medical</option><option>Shopping</option><option>Travel</option>
-                <option>Bills</option><option>Other</option>
-              </select>
-            </label>
-            <label>Paid To<input id="paidTo" type="text" list="peopleList" placeholder="Shop, company or person"></label>
-            <label>Paid From<select id="expenseAccount"></select></label>
-            <label>Payment Method<select id="expenseMethod"></select></label>
-            <label>Amount<input id="expenseAmount" type="number" min="0" step="0.01" placeholder="0"></label>
-            <label class="full-width">Notes<textarea id="expenseNotes" rows="2" placeholder="Optional"></textarea></label>
-          </div>
-          <div class="button-row">
-            <button id="saveExpense" class="btn primary">Save Expense</button>
-            <button id="cancelExpenseEdit" class="btn secondary hidden">Cancel</button>
-          </div>
-        </div>
-      </section>
-
-      <section id="transfer" class="page">
-        <div class="page-heading"><div><h2>Transfer</h2><p>Move money between accounts or pay a credit-card bill</p></div></div>
-        <div class="panel">
-          <input id="transferEditId" type="hidden">
-          <div class="form-grid">
-            <label>Date<input id="transferDate" type="date"></label>
-            <label>From Account<select id="transferFrom"></select></label>
-            <label>To Account<select id="transferTo"></select></label>
-            <label>Amount<input id="transferAmount" type="number" min="0" step="0.01" placeholder="0"></label>
-            <label class="full-width">Notes<textarea id="transferNotes" rows="2" placeholder="Example: HDFC card bill payment"></textarea></label>
-          </div>
-          <div class="button-row">
-            <button id="saveTransfer" class="btn primary">Save Transfer</button>
-            <button id="cancelTransferEdit" class="btn secondary hidden">Cancel</button>
-          </div>
-        </div>
-      </section>
-
-      <section id="history" class="page">
-        <div class="page-heading"><div><h2>Transaction History</h2><p>Search, filter, edit and delete transactions</p></div></div>
-        <div class="panel">
-          <div class="filter-row history-filter">
-            <input id="historySearch" type="search" placeholder="Search person, category or notes">
-            <select id="historyType"><option value="All">All Types</option><option>Income</option><option>Expense</option><option>Transfer</option></select>
-            <label>From<input id="historyFrom" type="date"></label>
-            <label>To<input id="historyTo" type="date"></label>
-            <select id="historyAccount"><option value="All">All Accounts</option></select>
-            <button id="clearHistoryFilters" class="btn secondary">Clear</button>
-          </div>
-          <div id="transactionList"></div>
-        </div>
-      </section>
-
-      <section id="reports" class="page">
-        <div class="page-heading"><div><h2>Reports</h2><p>Income, expense, savings and account reports</p></div></div>
-
-        <div class="panel">
-          <div class="filter-row report-filter">
-            <label>Period
-              <select id="reportPreset">
-                <option value="thisMonth">This Month</option>
-                <option value="today">Today</option>
-                <option value="yesterday">Yesterday</option>
-                <option value="thisWeek">This Week</option>
-                <option value="lastMonth">Last Month</option>
-                <option value="thisYear">This Year</option>
-                <option value="custom">Custom Range</option>
-              </select>
-            </label>
-            <label>From Date<input id="reportFrom" type="date"></label>
-            <label>To Date<input id="reportTo" type="date"></label>
-            <button id="generateReport" class="btn primary">Generate</button>
-          </div>
-          <div class="period-label">Report Period: <strong id="reportPeriodLabel">-</strong></div>
-        </div>
-
-        <div class="summary-grid report-summary">
-          <article class="summary-card green"><span>Total Income</span><strong id="reportIncome">₹0</strong></article>
-          <article class="summary-card red"><span>Total Expense</span><strong id="reportExpense">₹0</strong></article>
-          <article class="summary-card blue"><span>Net Savings</span><strong id="reportSavings">₹0</strong></article>
-          <article class="summary-card cyan"><span>Savings %</span><strong id="reportSavingsPercent">0%</strong></article>
-        </div>
-
-        <div class="two-column">
-          <div class="panel"><h3>Expense by Category</h3><div id="reportCategorySummary"></div></div>
-          <div class="panel"><h3>Account Balances</h3><div id="reportAccountBalances"></div></div>
-        </div>
-
-        <div class="panel">
-          <h3>Monthly Income vs Expense</h3>
-          <div id="monthlyTrend"></div>
-        </div>
-      </section>
-
-      <section id="backup" class="page">
-        <div class="page-heading"><div><h2>Backup & Restore</h2><p>Protect your data when changing phone or browser</p></div></div>
-
-        <div class="two-column">
-          <div class="panel">
-            <h3>Download Backup</h3>
-            <p class="muted">Accounts and all transactions are saved in one JSON file.</p>
-            <button id="downloadBackup" class="btn primary">⬇️ Download Backup</button>
-          </div>
-          <div class="panel">
-            <h3>Restore Backup</h3>
-            <p class="muted">Select a backup file created by My Finance.</p>
-            <input id="restoreFile" type="file" accept=".json,application/json">
-            <button id="restoreBackup" class="btn primary top-gap">⬆️ Restore Data</button>
-          </div>
-        </div>
-
-        <div class="panel danger-zone">
-          <h3>Clear All Data</h3>
-          <p class="muted">This permanently removes accounts and transactions from this browser.</p>
-          <button id="clearAllData" class="btn danger">Delete All Data</button>
-        </div>
-      </section>
-    </main>
-
-    <datalist id="peopleList"></datalist>
-    <footer>My Finance v3.0 • Data is saved in this browser</footer>
-  </div>
-
+  <div id="toast" class="toast"></div>
   <script src="script.js"></script>
 </body>
 </html>
