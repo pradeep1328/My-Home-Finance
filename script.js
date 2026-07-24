@@ -23,3 +23,119 @@ function renderHistory(){let q=$('hSearch').value.toLowerCase(),ty=$('hType').va
 function editTx(id){let t=T().find(x=>x.id===id);document.querySelector(`[data-page="${t.type.toLowerCase()}"]`).click();if(t.type==='Income'){$('inId').value=t.id;$('inDate').value=t.date;$('inCat').value=t.category;$('inParty').value=t.party||'';$('inAcc').value=t.accountId;$('inMethod').value=t.method;$('inAmount').value=t.amount;$('inNotes').value=t.notes||'';$('saveIn').textContent='Update Income';$('cancelIn').classList.remove('hidden')}if(t.type==='Expense'){$('exId').value=t.id;$('exDate').value=t.date;$('exCat').value=t.category;$('exParty').value=t.party||'';$('exAcc').value=t.accountId;$('exMethod').value=t.method;$('exAmount').value=t.amount;$('exNotes').value=t.notes||'';$('saveEx').textContent='Update Expense';$('cancelEx').classList.remove('hidden')}if(t.type==='Transfer'){$('trId').value=t.id;$('trDate').value=t.date;$('trFrom').value=t.from;$('trTo').value=t.to;$('trAmount').value=t.amount;$('trNotes').value=t.notes||'';$('saveTr').textContent='Update Transfer';$('cancelTr').classList.remove('hidden')}}
 function delTx(id){if(confirm('Delete this transaction?')){S(K.t,T().filter(x=>x.id!==id));refresh()}}
 function dashboard(){let mo=$('dashMonth').value,l=T().filter(t=>t.date.startsWith(mo)),inc=l.filter(t=>t.type==='Income').reduce((s,t)=>s+ +t.amount,0),ex=l.filter(t=>t.type==='Expense').reduce((s,t)=>s+ +t.amount,0),a=A();$('dIncome').textContent=R(inc);$('dExpense').textContent=R(ex);$('dBalance').textContent=R(inc-ex);$('dCash').textContent=R(a.filter(x=>x.type!=='Credit Card').reduce((s,x)=>s+bal(x.id),0));$('dCard').textContent=R(a.filter(x=>x.type==='Credit Card').reduce((s,x)=>s+bal(x.id),0));$('dCount').textContent=a.length;let r=[...T()].sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).slice(0,5);$('recent').innerHTML=r.length?r.map(t=>`<div class='detail'><span>${t.type} • ${date(t.date)}</span><b>${R(t.amount)}</b></div>`).join(''):'<div class="empty">No transactions yet.</div>';let c={};l.filter(t=>t.type==='Expense').forEach(t=>c[t.category]=(c[t.category]||0)+ +t.amount);let max=Math.max(1,...Object.values(c));$('categories').innerHTML=Object.keys(c).length?Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class='barrow'><span>${E(k)}</span><div class='bar'><span style='width:${v/max*100}%'></span></div><b>${R(v)}</b></div>`).join(''):'<div class="empty">No expenses this month.</div>'}
+
+
+function dateText(d){
+  return d.toISOString().slice(0,10);
+}
+function presetDates(preset){
+  const now=new Date();
+  let from=new Date(now),to=new Date(now);
+  if(preset==="today"){}
+  else if(preset==="yesterday"){from.setDate(from.getDate()-1);to=new Date(from)}
+  else if(preset==="thisWeek"){
+    const day=(now.getDay()+6)%7;
+    from.setDate(now.getDate()-day);
+  }
+  else if(preset==="lastMonth"){
+    from=new Date(now.getFullYear(),now.getMonth()-1,1);
+    to=new Date(now.getFullYear(),now.getMonth(),0);
+  }
+  else if(preset==="thisYear"){
+    from=new Date(now.getFullYear(),0,1);
+    to=new Date(now.getFullYear(),11,31);
+  }
+  else{
+    from=new Date(now.getFullYear(),now.getMonth(),1);
+    to=new Date(now.getFullYear(),now.getMonth()+1,0);
+  }
+  return {from:dateText(from),to:dateText(to)};
+}
+function applyPreset(prefix){
+  const preset=$(prefix+"Preset").value;
+  if(preset!=="custom"){
+    const range=presetDates(preset);
+    $(prefix+"From").value=range.from;
+    $(prefix+"To").value=range.to;
+  }
+  if(prefix==="dashboard")renderDashboard();else renderReports();
+}
+function categoryHtml(cats){
+  const entries=Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  const max=Math.max(1,...entries.map(x=>x[1]));
+  return entries.length?entries.map(([k,v])=>`<div class="category-row"><span>${esc(k)}</span><div class="bar"><span style="width:${v/max*100}%"></span></div><b>${money(v)}</b></div>`).join(""):'<div class="empty">No expenses for selected dates.</div>';
+}
+function renderReports(){
+  const from=$("reportFrom").value,to=$("reportTo").value;
+  const list=transactions().filter(t=>(!from||t.date>=from)&&(!to||t.date<=to));
+  const income=list.filter(t=>t.type==="Income").reduce((s,t)=>s+Number(t.amount),0);
+  const expense=list.filter(t=>t.type==="Expense").reduce((s,t)=>s+Number(t.amount),0);
+  const savings=income-expense;
+  $("reportIncome").textContent=money(income);
+  $("reportExpense").textContent=money(expense);
+  $("reportSavings").textContent=money(savings);
+  $("reportSavingsPercent").textContent=income>0?`${((savings/income)*100).toFixed(1)}%`:"0%";
+
+  const cats={};
+  list.filter(t=>t.type==="Expense").forEach(t=>cats[t.category]=(cats[t.category]||0)+Number(t.amount));
+  $("reportCategorySummary").innerHTML=categoryHtml(cats);
+
+  const acc=accounts();
+  $("reportAccountBalances").innerHTML=acc.length?acc.map(a=>`<div class="account-report-row"><span>${esc(a.name)} <small class="muted">(${a.type})</small></span><b>${money(accountBalance(a.id))}</b></div>`).join(""):'<div class="empty">No accounts found.</div>';
+
+  const months={};
+  list.forEach(t=>{
+    const m=t.date.slice(0,7);
+    if(!months[m])months[m]={income:0,expense:0};
+    if(t.type==="Income")months[m].income+=Number(t.amount);
+    if(t.type==="Expense")months[m].expense+=Number(t.amount);
+  });
+  const entries=Object.entries(months).sort((a,b)=>a[0].localeCompare(b[0]));
+  const max=Math.max(1,...entries.flatMap(([,v])=>[v.income,v.expense]));
+  $("monthlyTrend").innerHTML=entries.length?entries.map(([m,v])=>{
+    const label=new Date(m+"-01").toLocaleString("en-IN",{month:"short",year:"numeric"});
+    return `<div class="trend-row"><b>${label}</b><div class="trend-bars"><div class="trend-bar trend-income"><span style="width:${v.income/max*100}%"></span></div><div class="trend-bar trend-expense"><span style="width:${v.expense/max*100}%"></span></div></div><span class="trend-income-value">Income ${money(v.income)}</span><span class="trend-expense-value">Expense ${money(v.expense)}</span></div>`;
+  }).join(""):'<div class="empty">No report data for selected dates.</div>';
+}
+function downloadBackup(){
+  const data={
+    app:"My Finance",
+    version:"2.2",
+    exportedAt:new Date().toISOString(),
+    accounts:accounts(),
+    transactions:transactions()
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download=`my-finance-backup-${today()}.json`;
+  document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}
+function restoreBackup(){
+  const file=$("restoreFile").files[0];
+  if(!file)return alert("Backup file select చేయండి.");
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const data=JSON.parse(reader.result);
+      if(!Array.isArray(data.accounts)||!Array.isArray(data.transactions))throw new Error("Invalid");
+      if(!confirm("Existing data replace చేసి backup restore చేయాలా?"))return;
+      save(STORAGE.accounts,data.accounts);
+      save(STORAGE.transactions,data.transactions);
+      $("restoreFile").value="";
+      refreshAll();renderReports();
+      alert("Backup restored successfully.");
+    }catch(e){alert("Invalid backup file.");}
+  };
+  reader.readAsText(file);
+}
+function clearAllData(){
+  if(confirm("Accounts and transactions అన్నీ permanently delete చేయాలా?")){
+    if(confirm("Final confirmation: ఈ action undo చేయలేరు.")){
+      localStorage.removeItem(STORAGE.accounts);
+      localStorage.removeItem(STORAGE.transactions);
+      refreshAll();renderReports();
+      alert("All data deleted.");
+    }
+  }
+}
